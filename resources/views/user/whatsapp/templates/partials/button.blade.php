@@ -1,0 +1,9 @@
+<div class="template-builder-button-card" data-button-row>
+    <div class="wa-button-fields">
+        <div class="template-builder-field"><label for="button-{{ $index }}-type">Jenis tombol</label><select id="button-{{ $index }}-type" name="buttons[{{ $index }}][type]" data-button-type>@foreach(\App\Models\WhatsappTemplate::BUTTON_TYPES as $value => $label)<option value="{{ $value }}" @selected(($button['type'] ?? 'QUICK_REPLY') === $value)>{{ $label }}</option>@endforeach</select></div>
+        <div class="template-builder-field"><label for="button-{{ $index }}-label">Teks tombol</label><input id="button-{{ $index }}-label" name="buttons[{{ $index }}][label]" value="{{ $button['label'] ?? '' }}" maxlength="25" placeholder="Contoh: Lihat promo" data-button-label required></div>
+        <button class="wa-remove-button" type="button" data-remove-button aria-label="Hapus tombol">×</button>
+    </div>
+    <div class="template-builder-field" data-button-url-field @if(($button['type'] ?? '') !== 'URL') hidden @endif><label for="button-{{ $index }}-url">URL website</label><input id="button-{{ $index }}-url" name="buttons[{{ $index }}][url]" value="{{ $button['url'] ?? '' }}" type="url" placeholder="https://toko.com/promo" maxlength="2000" data-button-url @disabled(($button['type'] ?? '') !== 'URL') @required(($button['type'] ?? '') === 'URL')></div>
+    <div class="template-builder-field" data-button-phone-field @if(($button['type'] ?? '') !== 'PHONE_NUMBER') hidden @endif><label for="button-{{ $index }}-phone">Nomor telepon</label><input id="button-{{ $index }}-phone" name="buttons[{{ $index }}][phone]" value="{{ $button['phone'] ?? '' }}" type="tel" placeholder="+628123456789" maxlength="16" data-button-phone @disabled(($button['type'] ?? '') !== 'PHONE_NUMBER') @required(($button['type'] ?? '') === 'PHONE_NUMBER')></div>
+</div>
