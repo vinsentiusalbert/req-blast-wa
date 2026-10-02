@@ -3,7 +3,6 @@
 namespace Tests\Unit;
 
 use App\Services\WhatsApp\RecipientParser;
-use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 class RecipientParserTest extends TestCase
@@ -14,14 +13,13 @@ class RecipientParserTest extends TestCase
         $this->assertSame(['6281234567890', '6281234567891', '14155552671'], $result);
     }
 
-    public function test_unique_recipient_limit_is_enforced(): void
+    public function test_more_than_one_thousand_unique_recipients_are_accepted(): void
     {
         $numbers = array_map(fn ($i) => '628'.str_pad((string) $i, 9, '0', STR_PAD_LEFT), range(1, 1001));
-        $this->expectException(InvalidArgumentException::class);
-        (new RecipientParser)->parse(implode("\n", $numbers));
+        $this->assertSame($numbers, (new RecipientParser)->parse(implode("\n", $numbers)));
     }
 
-    public function test_duplicates_do_not_consume_the_unique_limit(): void
+    public function test_large_duplicate_lists_are_deduplicated(): void
     {
         $this->assertCount(1, (new RecipientParser)->parse(str_repeat("081234567890\n", 1001)));
     }

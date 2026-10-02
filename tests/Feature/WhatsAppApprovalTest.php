@@ -42,7 +42,7 @@ class WhatsAppApprovalTest extends TestCase
         $this->assertNull($template->reviewed_by);
         $this->get(route('user.whatsapp.broadcasts.create'))->assertRedirect(route('user.whatsapp.broadcasts.index'));
         $this->post(route('user.whatsapp.broadcasts.store'), [
-            'name' => 'Bypass', 'whatsapp_template_id' => $template->id, 'recipients' => '081234567890',
+            'name' => 'Bypass', 'whatsapp_template_id' => $template->id, 'recipient_file' => UploadedFile::fake()->createWithContent('contacts.csv', '081234567890'),
         ])->assertSessionHasErrors('whatsapp_template_id');
         $this->assertDatabaseCount('whatsapp_broadcasts', 0);
     }
@@ -63,7 +63,7 @@ class WhatsAppApprovalTest extends TestCase
         $this->get(route('admin.whatsapp.templates.index', ['status' => 'approved']))->assertOk()->assertSee($template->name);
         $this->actingAs($user)->get(route('user.whatsapp.broadcasts.create'))->assertOk()->assertSee($template->name);
         $this->post(route('user.whatsapp.broadcasts.store'), [
-            'name' => 'Approved broadcast', 'whatsapp_template_id' => $template->id, 'recipients' => '081234567890',
+            'name' => 'Approved broadcast', 'whatsapp_template_id' => $template->id, 'recipient_file' => UploadedFile::fake()->createWithContent('contacts.csv', '081234567890'),
         ])->assertSessionHasNoErrors();
         $this->assertDatabaseCount('whatsapp_broadcasts', 1);
     }
@@ -82,7 +82,7 @@ class WhatsAppApprovalTest extends TestCase
         $this->assertSame(WhatsappTemplate::REJECTED, $template->fresh()->approval_status);
         $this->actingAs($user)->get(route('user.whatsapp.templates.show', $template))->assertOk()->assertSee('Perjelas periode promo.');
         $this->post(route('user.whatsapp.broadcasts.store'), [
-            'name' => 'Blocked', 'whatsapp_template_id' => $template->id, 'recipients' => '081234567890',
+            'name' => 'Blocked', 'whatsapp_template_id' => $template->id, 'recipient_file' => UploadedFile::fake()->createWithContent('contacts.csv', '081234567890'),
         ])->assertSessionHasErrors('whatsapp_template_id');
         $this->put(route('user.whatsapp.templates.update', $template), $this->payload(['body' => 'Promo berlaku 1–7 Oktober.']))
             ->assertSessionHasNoErrors();
@@ -100,7 +100,7 @@ class WhatsAppApprovalTest extends TestCase
             'decision' => 'approved', 'revision' => 1,
         ])->assertSessionHasNoErrors();
         $this->actingAs($user)->post(route('user.whatsapp.broadcasts.store'), [
-            'name' => 'Draft', 'whatsapp_template_id' => $template->id, 'recipients' => '081234567890',
+            'name' => 'Draft', 'whatsapp_template_id' => $template->id, 'recipient_file' => UploadedFile::fake()->createWithContent('contacts.csv', '081234567890'),
         ])->assertSessionHasNoErrors();
         $broadcast = $user->whatsappBroadcasts()->sole();
         $this->put(route('user.whatsapp.templates.update', $template), $this->payload(['body' => 'Isi baru']))
@@ -109,13 +109,13 @@ class WhatsAppApprovalTest extends TestCase
         $this->assertNull($template->fresh()->reviewed_at);
         $this->get(route('user.whatsapp.broadcasts.show', $broadcast))->assertOk()->assertSee('Draft terblokir');
         $this->put(route('user.whatsapp.broadcasts.update', $broadcast), [
-            'name' => 'Attempt', 'whatsapp_template_id' => $template->id, 'recipients' => '081234567890',
+            'name' => 'Attempt', 'whatsapp_template_id' => $template->id, 'recipient_file' => UploadedFile::fake()->createWithContent('contacts.csv', '081234567890'),
         ])->assertSessionHasErrors('whatsapp_template_id');
         $this->actingAs($admin)->patch(route('admin.whatsapp.templates.review', $template), [
             'decision' => 'approved', 'revision' => 2,
         ])->assertSessionHasNoErrors();
         $this->actingAs($user)->put(route('user.whatsapp.broadcasts.update', $broadcast), [
-            'name' => 'Resumed', 'whatsapp_template_id' => $template->id, 'recipients' => '081234567890',
+            'name' => 'Resumed', 'whatsapp_template_id' => $template->id, 'recipient_file' => UploadedFile::fake()->createWithContent('contacts.csv', '081234567890'),
         ])->assertSessionHasNoErrors();
     }
 

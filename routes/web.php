@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WhatsApp\CampaignController;
+use App\Http\Controllers\Admin\WhatsApp\CampaignScheduleController;
+use App\Http\Controllers\Admin\WhatsApp\SenderController;
 use App\Http\Controllers\Admin\WhatsApp\TemplateReviewController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
@@ -23,6 +26,13 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
+        Route::get('/whatsapp/campaigns', [CampaignController::class, 'index'])->name('whatsapp.campaigns.index');
+        Route::get('/whatsapp/senders', [SenderController::class, 'index'])->name('whatsapp.senders.index');
+        Route::post('/whatsapp/senders', [SenderController::class, 'store'])->name('whatsapp.senders.store');
+        Route::patch('/whatsapp/senders/{sender}', [SenderController::class, 'update'])->name('whatsapp.senders.update');
+        Route::put('/whatsapp/campaigns/{broadcast}/schedules', [CampaignScheduleController::class, 'update'])->name('whatsapp.campaigns.schedules.update');
+        Route::get('/whatsapp/campaigns/{broadcast}', [CampaignController::class, 'show'])->name('whatsapp.campaigns.show');
+        Route::patch('/whatsapp/campaigns/{broadcast}', [CampaignController::class, 'update'])->name('whatsapp.campaigns.update');
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.role');
         Route::prefix('whatsapp/templates')->name('whatsapp.templates.')->group(function () {
@@ -34,7 +44,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::prefix('user')->name('user.')->middleware('role:user')->group(function () {
-        Route::view('/dashboard', 'user.dashboard')->name('dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'user'])->name('dashboard');
 
         Route::prefix('whatsapp')->name('whatsapp.')->group(function () {
             Route::get('/templates/{template}/asset', [TemplateController::class, 'asset'])->name('templates.asset');

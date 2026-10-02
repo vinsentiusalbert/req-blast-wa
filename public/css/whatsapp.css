@@ -93,3 +93,5 @@
     .wa-builder .template-builder-inline-actions .button { flex: 1; }
     .page-heading { flex-wrap: wrap; }
 }
+.wa-builder .wa-download-link { color: #2563eb; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.wa-builder .wa-download-link:hover, .wa-builder .wa-download-link:focus-visible { color: #1d4ed8; }

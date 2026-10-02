@@ -6,6 +6,7 @@
     <span class="date-label">{{ now()->format('d / m / Y') }}</span>
 </div>
 <section class="account-banner"><div><h2>Kelola pengguna dengan mudah</h2><p>Atur peran dan akses pengguna dari satu dashboard.</p></div><a class="button" href="{{ route('admin.users.index') }}">Kelola pengguna &rarr;</a></section>
+@include('partials.whatsapp-dashboard-stats')
 <div class="section-label"><h2>Ringkasan pengguna</h2><span>DATA PENGGUNA</span></div>
 <div class="stats">
     <article class="card stat-card"><div class="stat-heading"><span>Total pengguna</span><span class="stat-icon" aria-hidden="true">◎</span></div><strong class="stat">{{ str_pad($totalUsers, 2, '0', STR_PAD_LEFT) }}</strong><small><span class="status-dot"></span> Seluruh akun terdaftar</small></article>

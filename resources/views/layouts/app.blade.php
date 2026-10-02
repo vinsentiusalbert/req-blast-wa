@@ -38,13 +38,22 @@
                                     @include('partials.portal-sidebar-icon', ['icon' => 'wa'])<span>Persetujuan Template</span>
                                 </a>
                             </div>
+                            <div class="portal-nav__item {{ request()->routeIs('admin.whatsapp.campaigns.*') ? 'portal-nav__item--active' : '' }}">
+                                <a class="portal-nav__head portal-nav__link" href="{{ route('admin.whatsapp.campaigns.index') }}" @if(request()->routeIs('admin.whatsapp.campaigns.*')) aria-current="page" @endif>
+                                    @include('partials.portal-sidebar-icon', ['icon' => 'wa'])<span>Campaign WhatsApp</span>
+                                </a>
+                            </div>
+                            <div class="portal-nav__item {{ request()->routeIs('admin.whatsapp.senders.*') ? 'portal-nav__item--active' : '' }}">
+                                <a class="portal-nav__head portal-nav__link" href="{{ route('admin.whatsapp.senders.index') }}" @if(request()->routeIs('admin.whatsapp.senders.*')) aria-current="page" @endif>
+                                    @include('partials.portal-sidebar-icon', ['icon' => 'wa'])<span>Nomor Pengirim</span>
+                                </a>
+                            </div>
                         @else
                             @include('user.whatsapp.partials.navigation')
                         @endif
                     @endauth
                 </nav>
                 @auth
-                    <div class="sidebar-account"><span class="status-dot"></span>{{ auth()->user()->isAdmin() ? 'Administrator' : 'Akun user' }}<small>Kelola akun dan akses Anda.</small></div>
                     <form class="sidebar-logout" action="{{ route('logout') }}" method="POST">@csrf<button class="button secondary" type="submit">Keluar dari akun</button></form>
                 @endauth
             </div>

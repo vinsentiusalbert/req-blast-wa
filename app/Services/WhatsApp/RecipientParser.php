@@ -6,8 +6,6 @@ use InvalidArgumentException;
 
 class RecipientParser
 {
-    public const MAX_RECIPIENTS = 1000;
-
     /** @return list<string> */
     public function parse(string $input): array
     {
@@ -32,9 +30,6 @@ class RecipientParser
 
             $recipients[$number] = $number;
 
-            if (count($recipients) > self::MAX_RECIPIENTS) {
-                throw new InvalidArgumentException('Maksimal '.self::MAX_RECIPIENTS.' nomor unik dalam satu broadcast.');
-            }
         }
 
         if ($recipients === []) {
