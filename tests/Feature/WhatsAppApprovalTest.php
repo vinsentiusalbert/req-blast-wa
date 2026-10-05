@@ -107,16 +107,16 @@ class WhatsAppApprovalTest extends TestCase
             ->assertSessionHasNoErrors();
         $this->assertSame(WhatsappTemplate::PENDING, $template->fresh()->approval_status);
         $this->assertNull($template->fresh()->reviewed_at);
-        $this->get(route('user.whatsapp.broadcasts.show', $broadcast))->assertOk()->assertSee('Draft terblokir');
+        $this->get(route('user.whatsapp.broadcasts.show', $broadcast))->assertOk()->assertSee('Campaign terblokir');
         $this->put(route('user.whatsapp.broadcasts.update', $broadcast), [
             'name' => 'Attempt', 'whatsapp_template_id' => $template->id, 'recipient_file' => UploadedFile::fake()->createWithContent('contacts.csv', '081234567890'),
-        ])->assertSessionHasErrors('whatsapp_template_id');
+        ])->assertForbidden();
         $this->actingAs($admin)->patch(route('admin.whatsapp.templates.review', $template), [
             'decision' => 'approved', 'revision' => 2,
         ])->assertSessionHasNoErrors();
         $this->actingAs($user)->put(route('user.whatsapp.broadcasts.update', $broadcast), [
             'name' => 'Resumed', 'whatsapp_template_id' => $template->id, 'recipient_file' => UploadedFile::fake()->createWithContent('contacts.csv', '081234567890'),
-        ])->assertSessionHasNoErrors();
+        ])->assertForbidden();
     }
 
     public function test_user_cannot_review_and_admin_can_access_private_review_image(): void

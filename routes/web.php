@@ -9,6 +9,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\User\WhatsApp\BroadcastController;
 use App\Http\Controllers\User\WhatsApp\TemplateController;
+use App\Http\Controllers\WhatsApp\DeliveryReportController;
+use App\Http\Controllers\WhatsApp\RecipientExportController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -32,6 +34,8 @@ Route::middleware('auth')->group(function () {
         Route::patch('/whatsapp/senders/{sender}', [SenderController::class, 'update'])->name('whatsapp.senders.update');
         Route::put('/whatsapp/campaigns/{broadcast}/schedules', [CampaignScheduleController::class, 'update'])->name('whatsapp.campaigns.schedules.update');
         Route::get('/whatsapp/campaigns/{broadcast}', [CampaignController::class, 'show'])->name('whatsapp.campaigns.show');
+        Route::get('/whatsapp/campaigns/{broadcast}/dlr/export', [DeliveryReportController::class, 'export'])->name('whatsapp.campaigns.dlr.export');
+        Route::get('/whatsapp/campaigns/{broadcast}/recipients/export', RecipientExportController::class)->name('whatsapp.campaigns.recipients.export');
         Route::patch('/whatsapp/campaigns/{broadcast}', [CampaignController::class, 'update'])->name('whatsapp.campaigns.update');
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.role');
@@ -50,6 +54,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/templates/{template}/asset', [TemplateController::class, 'asset'])->name('templates.asset');
             Route::resource('templates', TemplateController::class)->except('destroy');
             Route::resource('broadcasts', BroadcastController::class)->except('destroy');
+            Route::get('/broadcasts/{broadcast}/dlr/export', [DeliveryReportController::class, 'export'])->name('broadcasts.dlr.export');
+            Route::get('/broadcasts/{broadcast}/recipients/export', RecipientExportController::class)->name('broadcasts.recipients.export');
         });
     });
 });

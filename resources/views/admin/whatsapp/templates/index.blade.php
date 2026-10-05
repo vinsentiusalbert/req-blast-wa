@@ -5,8 +5,9 @@
 <section class="card table-card">
     <form method="GET" class="search-form wa-filters wa-review-filters" action="{{ route('admin.whatsapp.templates.index') }}">
         <label class="sr-only" for="review-search">Cari nama template</label><input id="review-search" name="search" value="{{ $filters['search'] ?? '' }}" maxlength="100" placeholder="Cari nama template...">
-        <label class="sr-only" for="review-status">Status persetujuan</label><select id="review-status" name="status">@foreach(\App\Models\WhatsappTemplate::APPROVAL_LABELS as $value => $label)<option value="{{ $value }}" @selected($status === $value)>{{ $label }}</option>@endforeach</select>
+        <label class="sr-only" for="review-status">Status persetujuan</label><select id="review-status" name="status"><option value="">Semua persetujuan</option><option value="not_approved" @selected($status === 'not_approved')>Belum approve / ditolak</option>@foreach(\App\Models\WhatsappTemplate::APPROVAL_LABELS as $value => $label)<option value="{{ $value }}" @selected($status === $value)>{{ $label }}</option>@endforeach</select>
         <button class="button secondary" type="submit">Filter</button>
+        <a href="{{ route('admin.whatsapp.templates.index') }}">Reset filter</a>
     </form>
     <div class="table-scroll" role="region" tabindex="0" aria-label="Antrean persetujuan template"><table><thead><tr><th>Template</th><th>Pemilik</th><th>Status</th><th>Diajukan</th><th>Aksi</th></tr></thead><tbody>
         @forelse($templates as $template)

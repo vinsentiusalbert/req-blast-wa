@@ -17,12 +17,14 @@ class TemplateReviewController extends Controller
     public function index(Request $request): View
     {
         $filters = $request->validate([
-            'status' => ['nullable', Rule::in(array_keys(WhatsappTemplate::APPROVAL_LABELS))],
+            'status' => ['nullable', Rule::in([...array_keys(WhatsappTemplate::APPROVAL_LABELS), 'not_approved'])],
             'search' => ['nullable', 'string', 'max:100'],
         ]);
-        $status = $filters['status'] ?? WhatsappTemplate::PENDING;
+        $status = $filters['status'] ?? '';
         $templates = WhatsappTemplate::query()->with('user')
-            ->where('approval_status', $status)
+            ->when($status, fn ($query) => $status === 'not_approved'
+                ? $query->where('approval_status', '!=', WhatsappTemplate::APPROVED)
+                : $query->where('approval_status', $status))
             ->when($filters['search'] ?? null, fn ($query, $search) => $query->where('name', 'like', '%'.$search.'%'))
             ->latest('updated_at')->latest('id')->paginate(10)->withQueryString();
 

@@ -5,6 +5,7 @@
 <div class="page-heading wa-page-heading"><div><span class="eyebrow">TEMPLATE WHATSAPP</span><h1>{{ $template->name }}</h1><p class="muted">Kelola template dan pantau hasil persetujuan admin.</p></div><a class="button secondary" href="{{ route('user.whatsapp.templates.edit', $template) }}">Edit Template</a></div>
 <div class="template-builder-layout wa-builder">
     <div class="template-builder-main">
+        @include('user.whatsapp.partials.template-details', ['template' => $template])
         <article class="template-builder-card"><h2>Informasi template</h2><dl><div><dt>Nama template</dt><dd>{{ $template->name }}</dd></div><div><dt>Bahasa</dt><dd>{{ \App\Models\WhatsappTemplate::LANGUAGES[$template->language] }}</dd></div><div><dt>Tipe header</dt><dd>{{ \App\Models\WhatsappTemplate::HEADER_TYPES[$template->header_type] }}</dd></div><div><dt>Diperbarui</dt><dd>{{ $template->updated_at->timezone('Asia/Jakarta')->format('d M Y, H:i') }} WIB</dd></div><div><dt>Status</dt><dd>@include('partials.whatsapp-approval')</dd></div><div><dt>Revisi</dt><dd>{{ $template->revision }}</dd></div></dl></article>
         <article class="template-builder-card"><h2>Persetujuan admin</h2>
             @if($template->isApproved())

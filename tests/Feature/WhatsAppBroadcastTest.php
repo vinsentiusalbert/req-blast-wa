@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use App\Models\WhatsappBroadcast;
+use App\Models\WhatsappBroadcastRecipient;
 use App\Models\WhatsappTemplate;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -13,7 +14,151 @@ class WhatsAppBroadcastTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_csv_variables_render_per_recipient_and_survive_edit_without_upload(): void
+    public function test_created_campaign_is_read_only_for_every_status_and_direct_update_method(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_USER]);
+        $template = $this->template($user);
+        $this->actingAs($user)->post(route('user.whatsapp.broadcasts.store'), [
+            'name' => 'Locked campaign', 'whatsapp_template_id' => $template->id,
+            'recipient_file' => UploadedFile::fake()->createWithContent('contacts.csv', '6281234567890'),
+        ])->assertSessionHasNoErrors();
+        $broadcast = $user->whatsappBroadcasts()->sole();
+        $originalEntryId = $broadcast->recipientEntries()->sole()->id;
+        foreach (array_keys(WhatsappBroadcast::STATUS_LABELS) as $status) {
+            $broadcast->forceFill(['status' => $status])->save();
+            $this->get(route('user.whatsapp.broadcasts.show', $broadcast))->assertOk()->assertDontSee('Edit Draft');
+            $this->get(route('user.whatsapp.broadcasts.edit', $broadcast))->assertForbidden();
+            foreach (['put', 'patch'] as $method) {
+                $this->{$method}(route('user.whatsapp.broadcasts.update', $broadcast), [
+                    'name' => 'Changed', 'whatsapp_template_id' => $template->id,
+                    'recipient_file' => UploadedFile::fake()->createWithContent('replacement.csv', '6281234567891'),
+                ])->assertForbidden();
+            }
+            $this->assertSame('Locked campaign', $broadcast->fresh()->name);
+            $this->assertSame(['6281234567890'], $broadcast->fresh()->recipients);
+            $this->assertSame($originalEntryId, $broadcast->recipientEntries()->sole()->id);
+        }
+        $this->get(route('user.whatsapp.broadcasts.index'))->assertOk()->assertSee('Lihat Campaign')->assertDontSee('Edit draft');
+        $this->get(route('user.whatsapp.broadcasts.recipients.export', $broadcast))->assertOk()->assertDownload();
+        $this->get(route('user.whatsapp.broadcasts.dlr.export', $broadcast))->assertOk()->assertDownload();
+    }
+
+    public function test_recipient_list_is_downloadable_for_owner_and_admin_with_legacy_fallback(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_USER]);
+        $broadcast = $user->whatsappBroadcasts()->create([
+            'name' => 'Download recipients', 'whatsapp_template_id' => $this->template($user)->id,
+            'recipients' => ['6281234567890', '6281234567891'], 'recipient_count' => 2,
+        ]);
+        foreach ([
+            [$user, 'user.whatsapp.broadcasts'],
+            [User::factory()->create(['role' => User::ROLE_ADMIN]), 'admin.whatsapp.campaigns'],
+        ] as [$viewer, $routes]) {
+            $this->actingAs($viewer)->get(route($routes.'.show', $broadcast))->assertOk()
+                ->assertSee('Unduh Daftar Penerima (CSV)')->assertDontSee('id="broadcast-recipients"', false)
+                ->assertDontSee('6281234567890');
+            $response = $this->get(route($routes.'.recipients.export', $broadcast))
+                ->assertOk()->assertDownload('penerima-broadcast-'.$broadcast->id.'.csv');
+            $this->assertSame("\xEF\xBB\xBFmsisdn\n6281234567890\n6281234567891\n", $response->streamedContent());
+        }
+        $broadcast->recipientEntries()->create(['user_id' => $user->id, 'phone_number' => '6281234567892']);
+        $this->actingAs($user);
+        $csv = $this->get(route('user.whatsapp.broadcasts.recipients.export', $broadcast))->assertOk()->streamedContent();
+        $this->assertStringContainsString('6281234567892', $csv);
+        $this->assertStringNotContainsString('6281234567890', $csv);
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_USER]));
+        $this->get(route('user.whatsapp.broadcasts.recipients.export', $broadcast))->assertForbidden();
+        $this->get(route('admin.whatsapp.campaigns.recipients.export', $broadcast))->assertForbidden();
+    }
+
+    public function test_large_campaign_shows_delivery_report_without_per_recipient_message_examples(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_USER]);
+        $template = $this->template($user);
+        $template->forceFill(['body' => 'Halo {{var1}}'])->save();
+        $numbers = array_map(fn ($index) => '6281234'.str_pad($index, 5, '0', STR_PAD_LEFT), range(1, 7000));
+        $broadcast = $user->whatsappBroadcasts()->create([
+            'name' => 'Large preview', 'whatsapp_template_id' => $template->id,
+            'recipients' => $numbers, 'recipient_count' => count($numbers),
+        ]);
+        foreach (array_chunk($numbers, 500, true) as $chunk) {
+            $rows = [];
+            foreach ($chunk as $index => $number) {
+                $rows[] = [
+                    'whatsapp_broadcast_id' => $broadcast->id, 'user_id' => $user->id,
+                    'phone_number' => $number, 'variables' => json_encode(['var1' => 'Pelanggan '.($index + 1)]),
+                ];
+            }
+            WhatsappBroadcastRecipient::insert($rows);
+        }
+
+        foreach ([
+            [$user, 'user.whatsapp.broadcasts.show'],
+            [User::factory()->create(['role' => User::ROLE_ADMIN]), 'admin.whatsapp.campaigns.show'],
+        ] as [$viewer, $route]) {
+            $this->actingAs($viewer);
+            $url = route($route, $broadcast);
+            $this->get($url)->assertOk()
+                ->assertViewHas('dlrRows', fn ($rows) => $rows->count() === 25 && $rows->total() === 7000)
+                ->assertViewHas('dlrCounts', ['pending' => 7000, 'sent' => 0, 'success' => 0, 'failed' => 0])
+                ->assertSee('7.000')->assertSee('Delivery report (DLR)')->assertSee('Unduh Daftar Penerima (CSV)')
+                ->assertDontSee('Contoh pesan per penerima')->assertDontSee('Halo Pelanggan 1');
+            $this->get($url.'?dlr_page=280')->assertOk()
+                ->assertViewHas('dlrRows', fn ($rows) => $rows->count() === 25 && $rows->last()->phone_number === '628123407000');
+        }
+    }
+
+    public function test_campaign_does_not_display_csv_message_variables(): void
+    {
+        $user = User::factory()->create(['role' => User::ROLE_USER]);
+        $template = $this->template($user);
+        $template->forceFill(['body' => 'Halo {{var1}}'])->save();
+        $broadcasts = [];
+        foreach (['First', 'Second'] as $name) {
+            $broadcast = $user->whatsappBroadcasts()->create([
+                'name' => $name, 'whatsapp_template_id' => $template->id,
+                'recipients' => ['6281234567890'], 'recipient_count' => 1,
+            ]);
+            $broadcast->recipientEntries()->create([
+                'user_id' => $user->id, 'phone_number' => '6281234567890',
+                'variables' => ['var1' => $name === 'First' ? '<script>alert(1)</script>' : 'Private second message'],
+            ]);
+            $broadcasts[] = $broadcast;
+        }
+        $this->actingAs($user)->get(route('user.whatsapp.broadcasts.show', $broadcasts[0], false).'?recipient_search=1234')
+            ->assertOk()->assertDontSee('Contoh pesan per penerima')
+            ->assertDontSee('<script>alert(1)</script>', false)->assertDontSee('Private second message');
+    }
+
+    public function test_admin_lists_all_templates_and_filters_campaign_approval_and_airing(): void
+    {
+        $client = User::factory()->create(['role' => User::ROLE_USER]);
+        $approved = $this->template($client);
+        $pending = $approved->replicate();
+        $pending->forceFill(['name' => 'template_pending', 'approval_status' => WhatsappTemplate::PENDING])->save();
+        foreach (['draft', 'accepted', 'processing', 'completed', 'rejected'] as $status) {
+            $broadcast = $client->whatsappBroadcasts()->create([
+                'name' => 'campaign_'.$status, 'whatsapp_template_id' => $approved->id,
+                'recipients' => ['6281234567890'], 'recipient_count' => 1,
+            ]);
+            $broadcast->forceFill(['status' => $status])->save();
+        }
+        $this->actingAs(User::factory()->create(['role' => User::ROLE_ADMIN]));
+        $templates = route('admin.whatsapp.templates.index');
+        $this->get($templates)->assertOk()->assertSee($approved->name)->assertSee('template_pending');
+        $this->get($templates.'?status=approved')->assertSee($approved->name)->assertDontSee('template_pending');
+        $this->get($templates.'?status=not_approved')->assertSee('template_pending')->assertDontSee($approved->name);
+        $campaigns = route('admin.whatsapp.campaigns.index');
+        $this->get($campaigns)->assertOk()->assertSee('campaign_draft')->assertSee('campaign_processing')->assertSee('campaign_completed');
+        $this->get($campaigns.'?approval=approved')->assertSee('campaign_accepted')->assertSee('campaign_processing')->assertDontSee('campaign_draft')->assertDontSee('campaign_rejected');
+        $this->get($campaigns.'?approval=not_approved')->assertSee('campaign_draft')->assertSee('campaign_rejected')->assertDontSee('campaign_processing');
+        $this->get($campaigns.'?airing=live')->assertSee('campaign_processing')->assertDontSee('campaign_accepted')->assertDontSee('campaign_completed');
+        $this->get($campaigns.'?airing=not_live')->assertSee('campaign_accepted')->assertSee('campaign_draft')->assertDontSee('campaign_processing')->assertDontSee('campaign_completed');
+        $this->get($campaigns.'?airing=finished')->assertSee('campaign_completed')->assertDontSee('campaign_processing');
+        $this->get($campaigns.'?approval=approved&airing=not_live&search=accepted')->assertSee('campaign_accepted')->assertDontSee('campaign_draft');
+    }
+
+    public function test_csv_variables_render_per_recipient_and_cannot_be_replaced_after_creation(): void
     {
         $user = User::factory()->create(['role' => User::ROLE_USER]);
         $template = $this->template($user);
@@ -25,22 +170,25 @@ class WhatsAppBroadcastTest extends TestCase
         $broadcast = $user->whatsappBroadcasts()->sole();
         $this->assertSame(2, $broadcast->recipient_count);
         $this->assertSame(['var1' => 'Budi', 'var2' => 'Diskon'], $broadcast->recipientEntries()->first()->variables);
-        $this->get(route('user.whatsapp.broadcasts.show', $broadcast))->assertOk()->assertSee('Halo Budi, promo Diskon.')->assertSee('Halo Siti, promo Bonus.');
+        $this->get(route('user.whatsapp.broadcasts.show', $broadcast))->assertOk()->assertDontSee('Contoh pesan per penerima');
+        $this->assertSame('Halo Budi, promo Diskon.', $broadcast->recipientEntries()->first()->renderMessage($template->body));
+        $this->assertSame('Halo Siti, promo Bonus.', $broadcast->recipientEntries()->orderByDesc('id')->first()->renderMessage($template->body));
         $this->put(route('user.whatsapp.broadcasts.update', $broadcast), [
             'name' => 'Updated', 'whatsapp_template_id' => $template->id,
-        ])->assertSessionHasNoErrors();
+        ])->assertForbidden();
         $this->assertSame('Halo Budi, promo Diskon.', $broadcast->recipientEntries()->first()->renderMessage($template->body));
         $this->put(route('user.whatsapp.broadcasts.update', $broadcast), [
             'name' => 'Invalid', 'whatsapp_template_id' => $template->id,
             'recipient_file' => UploadedFile::fake()->createWithContent('contacts.csv', "msisdn,var1\n6281234567890,Budi"),
-        ])->assertSessionHasErrors('recipient_file');
-        $this->assertSame('Updated', $broadcast->fresh()->name);
+        ])->assertForbidden();
+        $this->assertSame('Personalized', $broadcast->fresh()->name);
         $this->assertSame('Halo Budi, promo Diskon.', $broadcast->recipientEntries()->first()->renderMessage($template->body));
         $this->put(route('user.whatsapp.broadcasts.update', $broadcast), [
             'name' => 'Replacement', 'whatsapp_template_id' => $template->id,
             'recipient_file' => UploadedFile::fake()->createWithContent('contacts.csv', "var2;msisdn;var1\n\"Promo, baru\";6281234567892;Andi"),
-        ])->assertSessionHasNoErrors();
-        $this->assertSame('Halo Andi, promo Promo, baru.', $broadcast->recipientEntries()->sole()->renderMessage($template->body));
+        ])->assertForbidden();
+        $this->assertSame(2, $broadcast->recipientEntries()->count());
+        $this->assertSame('Halo Budi, promo Diskon.', $broadcast->recipientEntries()->first()->renderMessage($template->body));
     }
 
     public function test_admin_can_manage_campaign_status_and_client_sees_it(): void
@@ -53,7 +201,7 @@ class WhatsAppBroadcastTest extends TestCase
             'recipients' => ['6281234567890'], 'recipient_count' => 1,
         ]);
         $this->actingAs($admin)->get(route('admin.whatsapp.campaigns.index'))->assertOk()->assertSee('Campaign client');
-        $this->get(route('admin.whatsapp.campaigns.show', $broadcast))->assertOk()->assertSee('6281234567890');
+        $this->get(route('admin.whatsapp.campaigns.show', $broadcast))->assertOk()->assertSee('Unduh Daftar Penerima (CSV)')->assertDontSee('id="broadcast-recipients"', false);
         $this->patch(route('admin.whatsapp.campaigns.update', $broadcast), ['status' => 'accepted'])
             ->assertSessionHasNoErrors()->assertRedirect(route('admin.whatsapp.campaigns.show', $broadcast));
         $this->assertSame('accepted', $broadcast->fresh()->status);
@@ -107,12 +255,15 @@ class WhatsAppBroadcastTest extends TestCase
         $this->assertSame(['6281234567890', '6281234567891'], $broadcast->recipients);
         $this->get(route('user.whatsapp.broadcasts.show', $broadcast))->assertOk()->assertSee('Belum dikirim');
         $this->get(route('user.whatsapp.broadcasts.index'))->assertOk()->assertSee('Promo Oktober');
-        $this->get(route('user.whatsapp.broadcasts.edit', $broadcast))->assertOk();
+        $this->get(route('user.whatsapp.broadcasts.edit', $broadcast))->assertForbidden();
         $this->put(route('user.whatsapp.broadcasts.update', $broadcast), [
             'name' => 'Promo baru', 'whatsapp_template_id' => $template->id,
             'recipient_file' => UploadedFile::fake()->createWithContent('contacts.csv', '+6281234567892'),
-        ])->assertSessionHasNoErrors()->assertRedirect(route('user.whatsapp.broadcasts.show', $broadcast));
-        $this->assertSame(1, $broadcast->fresh()->recipient_count);
+        ])->assertForbidden();
+        $this->assertSame(2, $broadcast->fresh()->recipient_count);
+        $this->assertSame('Promo Oktober', $broadcast->fresh()->name);
+        $this->get(route('user.whatsapp.broadcasts.index'))->assertOk()->assertSee('Lihat Campaign')->assertDontSee('Edit draft');
+        $this->get(route('user.whatsapp.broadcasts.show', $broadcast))->assertOk()->assertDontSee('Edit Draft');
     }
 
     public function test_foreign_templates_and_foreign_broadcasts_are_inaccessible(): void
@@ -170,11 +321,11 @@ class WhatsAppBroadcastTest extends TestCase
         $this->put(route('user.whatsapp.broadcasts.update', $broadcast), [
             'name' => 'CSV replacement', 'whatsapp_template_id' => $template->id,
             'recipient_file' => UploadedFile::fake()->createWithContent('contacts.csv', "081234567892\n+6281234567892"),
-        ])->assertSessionHasNoErrors();
-        $this->assertDatabaseCount('whatsapp_broadcast_recipients', 1);
-        $this->assertSame(['6281234567892'], $broadcast->fresh()->recipients);
+        ])->assertForbidden();
+        $this->assertDatabaseCount('whatsapp_broadcast_recipients', 2);
+        $this->assertSame(['6281234567890', '6281234567891'], $broadcast->fresh()->recipients);
         $this->assertDatabaseHas('whatsapp_broadcast_recipients', [
-            'whatsapp_broadcast_id' => $broadcast->id, 'user_id' => $user->id, 'phone_number' => '6281234567892',
+            'whatsapp_broadcast_id' => $broadcast->id, 'user_id' => $user->id, 'phone_number' => '6281234567890',
         ]);
     }
 
@@ -226,7 +377,7 @@ class WhatsAppBroadcastTest extends TestCase
         $this->assertSame(1001, $broadcast->recipientEntries()->where('user_id', $user->id)->count());
     }
 
-    public function test_edit_without_csv_keeps_saved_recipients(): void
+    public function test_update_without_csv_is_forbidden_and_keeps_saved_recipients(): void
     {
         $user = User::factory()->create();
         $template = $this->template($user);
@@ -237,7 +388,8 @@ class WhatsAppBroadcastTest extends TestCase
         $broadcast = $user->whatsappBroadcasts()->sole();
         $this->put(route('user.whatsapp.broadcasts.update', $broadcast), [
             'name' => 'Renamed', 'whatsapp_template_id' => $template->id,
-        ])->assertSessionHasNoErrors();
+        ])->assertForbidden();
+        $this->assertSame('Original', $broadcast->fresh()->name);
         $this->assertSame(['6281234567890'], $broadcast->fresh()->recipients);
         $this->assertSame('6281234567890', $broadcast->recipientEntries()->sole()->phone_number);
     }

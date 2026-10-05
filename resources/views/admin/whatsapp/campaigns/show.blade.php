@@ -5,6 +5,7 @@
 <div class="page-heading wa-page-heading"><div><span class="eyebrow">WHATSAPP · ADMIN</span><h1>{{ $broadcast->name }}</h1><p class="muted">Campaign dari {{ $broadcast->user->name }} ({{ '@'.$broadcast->user->username }}).</p></div></div>
 <div class="template-builder-layout wa-builder">
     <div class="template-builder-main">
+        @include('user.whatsapp.partials.broadcast-details')
         <article class="template-builder-card">
             <h2>Status campaign</h2>
             <p>Template: {{ $broadcast->template->name }} · {{ number_format($broadcast->recipient_count, 0, ',', '.') }} penerima.</p>
@@ -17,8 +18,8 @@
             </form>
         </article>
         @include('admin.whatsapp.campaigns.schedules')
-        @include('user.whatsapp.partials.recipient-messages')
-        <article class="template-builder-card"><h2>Daftar penerima</h2><ol class="wa-recipients-list">@foreach($broadcast->recipients as $recipient)<li>+{{ $recipient }}</li>@endforeach</ol></article>
+        @include('user.whatsapp.partials.delivery-report')
+        @include('user.whatsapp.partials.broadcast-recipients')
     </div>
     @include('user.whatsapp.partials.preview', ['template' => $broadcast->template])
 </div>

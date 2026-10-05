@@ -6,6 +6,7 @@ use App\Actions\WhatsApp\SaveBroadcastDraft;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\WhatsApp\SaveBroadcastRequest;
 use App\Models\WhatsappBroadcast;
+use App\Queries\WhatsApp\DeliveryReport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -39,15 +40,17 @@ class BroadcastController extends Controller
     {
         $broadcast = $action->handle($request->user(), $request->validated());
 
-        return to_route('user.whatsapp.broadcasts.show', $broadcast)->with('status', 'Draft broadcast berhasil disimpan. Pesan belum dikirim.');
+        return to_route('user.whatsapp.broadcasts.show', $broadcast)->with('status', 'Campaign berhasil dibuat dan tidak dapat diedit. Pesan belum dikirim.');
     }
 
-    public function show(WhatsappBroadcast $broadcast): View
+    public function show(Request $request, WhatsappBroadcast $broadcast): View
     {
         Gate::authorize('view', $broadcast);
         $broadcast->load('template');
 
-        return view('user.whatsapp.broadcasts.show', compact('broadcast'));
+        $deliveryReport = app(DeliveryReport::class)->forBroadcast($request, $broadcast);
+
+        return view('user.whatsapp.broadcasts.show', compact('broadcast') + $deliveryReport);
     }
 
     public function edit(Request $request, WhatsappBroadcast $broadcast): View

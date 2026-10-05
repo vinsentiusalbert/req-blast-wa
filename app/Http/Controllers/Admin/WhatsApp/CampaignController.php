@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\WhatsApp;
 use App\Http\Controllers\Controller;
 use App\Models\WhatsappBroadcast;
 use App\Models\WhatsappSender;
+use App\Queries\WhatsApp\DeliveryReport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,21 +20,37 @@ class CampaignController extends Controller
         $filters = $request->validate([
             'status' => ['nullable', Rule::in(array_keys(WhatsappBroadcast::STATUS_LABELS))],
             'search' => ['nullable', 'string', 'max:100'],
+            'approval' => ['nullable', Rule::in(['approved', 'not_approved'])],
+            'airing' => ['nullable', Rule::in(['live', 'not_live', 'finished'])],
         ]);
         $broadcasts = WhatsappBroadcast::with(['user', 'template'])
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
+            ->when($filters['approval'] ?? null, function ($query, $approval) {
+                return $approval === 'approved'
+                    ? $query->whereIn('status', ['accepted', 'processing', 'completed'])
+                    : $query->whereNotIn('status', ['accepted', 'processing', 'completed']);
+            })
+            ->when($filters['airing'] ?? null, function ($query, $airing) {
+                return match ($airing) {
+                    'live' => $query->where('status', 'processing'),
+                    'finished' => $query->where('status', 'completed'),
+                    'not_live' => $query->whereNotIn('status', ['processing', 'completed']),
+                };
+            })
             ->when($filters['search'] ?? null, fn ($query, $search) => $query->where('name', 'like', '%'.$search.'%'))
             ->latest('id')->paginate(10)->withQueryString();
 
         return view('admin.whatsapp.campaigns.index', compact('broadcasts', 'filters'));
     }
 
-    public function show(WhatsappBroadcast $broadcast): View
+    public function show(Request $request, WhatsappBroadcast $broadcast): View
     {
         $broadcast->load(['user', 'template', 'schedules']);
         $senders = WhatsappSender::where('is_active', true)->orderBy('phone_number')->get();
 
-        return view('admin.whatsapp.campaigns.show', compact('broadcast', 'senders'));
+        $deliveryReport = app(DeliveryReport::class)->forBroadcast($request, $broadcast);
+
+        return view('admin.whatsapp.campaigns.show', compact('broadcast', 'senders') + $deliveryReport);
     }
 
     public function update(Request $request, WhatsappBroadcast $broadcast): RedirectResponse

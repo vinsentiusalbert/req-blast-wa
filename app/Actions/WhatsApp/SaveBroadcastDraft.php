@@ -5,6 +5,7 @@ namespace App\Actions\WhatsApp;
 use App\Models\User;
 use App\Models\WhatsappBroadcast;
 use App\Services\WhatsApp\RecipientParser;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -33,6 +34,14 @@ class SaveBroadcastDraft
                 }
             }
             $draft = $broadcast ?? $user->whatsappBroadcasts()->make();
+            if (array_key_exists('send_date', $data)) {
+                $draft->sending_starts_at = ! empty($data['send_date'])
+                    ? CarbonImmutable::createFromFormat('!Y-m-d H:i', $data['send_date'].' '.$data['send_time'], WhatsappBroadcast::SENDING_TIMEZONE)->utc()
+                    : null;
+                $draft->sending_ends_at = ! empty($data['end_date'])
+                    ? CarbonImmutable::createFromFormat('!Y-m-d H:i', $data['end_date'].' '.$data['end_time'], WhatsappBroadcast::SENDING_TIMEZONE)->utc()
+                    : null;
+            }
             $draft->fill([
                 'name' => $data['name'],
                 'whatsapp_template_id' => $template->id,

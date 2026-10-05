@@ -5,6 +5,7 @@
 <div class="page-heading wa-page-heading"><div><span class="eyebrow">TINJAU TEMPLATE · REVISI {{ $template->revision }}</span><h1>{{ $template->name }}</h1><p class="muted">Periksa konten dan gambar sebelum memberikan keputusan.</p></div>@include('partials.whatsapp-approval')</div>
 <div class="template-builder-layout wa-builder">
     <div class="template-builder-main">
+        @include('user.whatsapp.partials.template-details', ['template' => $template])
         <article class="template-builder-card"><h2>Informasi pengajuan</h2><dl><div><dt>Pemilik</dt><dd>{{ $template->user->name }} ({{ '@'.$template->user->username }})</dd></div><div><dt>Bahasa</dt><dd>{{ \App\Models\WhatsappTemplate::LANGUAGES[$template->language] }}</dd></div><div><dt>Tipe header</dt><dd>{{ \App\Models\WhatsappTemplate::HEADER_TYPES[$template->header_type] }}</dd></div><div><dt>Revisi</dt><dd>{{ $template->revision }}</dd></div></dl></article>
         <article class="template-builder-card">
             @if($template->approval_status === \App\Models\WhatsappTemplate::PENDING)
