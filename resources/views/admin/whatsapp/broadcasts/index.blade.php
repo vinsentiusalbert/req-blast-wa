@@ -11,7 +11,7 @@
     </form>
     <div class="table-scroll"><table><thead><tr><th>Broadcast</th><th>Dibuat oleh</th><th>Penerima</th><th>Status</th><th>Aksi</th></tr></thead><tbody>
     @forelse($broadcasts as $broadcast)
-        <tr><td>{{ $broadcast->name }}<span class="cell-detail">{{ $broadcast->template->name }}</span></td><td>{{ $broadcast->user->name }}<span class="cell-detail">{{ '@'.$broadcast->user->username }}</span></td><td>{{ number_format($broadcast->recipient_count, 0, ',', '.') }}</td><td><span class="badge">{{ \App\Models\WhatsappBroadcast::STATUS_LABELS[$broadcast->status] ?? $broadcast->status }}</span></td><td><a class="button secondary small" href="{{ route('admin.whatsapp.broadcasts.show', $broadcast) }}">Lihat Detail</a></td></tr>
+        <tr><td>{{ $broadcast->name }}<span class="cell-detail">{{ $broadcast->template->name }}</span></td><td>{{ $broadcast->user->name }}<span class="cell-detail">{{ '@'.$broadcast->user->username }}</span></td><td>{{ number_format($broadcast->recipient_count, 0, ',', '.') }}</td><td><span class="badge campaign-status campaign-status--{{ $broadcast->status }}">{{ \App\Models\WhatsappBroadcast::STATUS_LABELS[$broadcast->status] ?? $broadcast->status }}</span></td><td><a class="button secondary small" href="{{ route('admin.whatsapp.broadcasts.show', $broadcast) }}">Lihat Detail</a></td></tr>
     @empty
         <tr><td colspan="5">Tidak ada campaign yang sesuai dengan filter.</td></tr>
     @endforelse

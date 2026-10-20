@@ -5,6 +5,11 @@
     <div><span class="eyebrow">DASHBOARD ADMIN</span><h1>Halo, {{ auth()->user()->name }}<span class="accent-dot">.</span></h1><p class="muted">Selamat datang kembali. Berikut ringkasan akun dan pengguna Anda.</p></div>
     <span class="date-label">{{ now()->format('d / m / Y') }}</span>
 </div>
+<div class="stats request-queue">
+    <a class="card stat-card request-queue__link" href="{{ route('admin.whatsapp.templates.index', ['status' => 'pending']) }}"><h2 class="stat-heading">Template menunggu review</h2><strong class="stat">{{ $pendingTemplates }}</strong><small>Tinjau template &rarr;</small></a>
+    <a class="card stat-card request-queue__link" href="{{ route('admin.whatsapp.broadcasts.index', ['status' => 'pending']) }}"><h2 class="stat-heading">Campaign menunggu review</h2><strong class="stat">{{ $pendingBroadcasts }}</strong><small>Tinjau campaign &rarr;</small></a>
+    <a class="card stat-card request-queue__link" href="{{ route('admin.whatsapp.broadcasts.index', ['status' => 'approve']) }}"><h2 class="stat-heading">Campaign disetujui</h2><strong class="stat">{{ $approvedBroadcasts }}</strong><small>Pantau penyelesaian &rarr;</small></a>
+</div>
 <section class="account-banner"><div><h2>Kelola pengguna dengan mudah</h2><p>Atur peran dan akses pengguna dari satu dashboard.</p></div><a class="button" href="{{ route('admin.users.index') }}">Kelola pengguna &rarr;</a></section>
 <div class="section-label"><h2>Ringkasan pengguna</h2><span>DATA PENGGUNA</span></div>
 <div class="stats">

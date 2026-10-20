@@ -41,6 +41,9 @@ class DashboardController extends Controller
     public function admin(): View
     {
         return view('admin.dashboard', [
+            'pendingTemplates' => WhatsappTemplate::where('approval_status', WhatsappTemplate::PENDING)->count(),
+            'pendingBroadcasts' => WhatsappBroadcast::where('status', WhatsappBroadcast::STATUS_PENDING)->count(),
+            'approvedBroadcasts' => WhatsappBroadcast::where('status', WhatsappBroadcast::STATUS_APPROVE)->count(),
             'totalUsers' => User::count(),
             'totalAdmins' => User::where('role', User::ROLE_ADMIN)->count(),
             'totalMembers' => User::where('role', User::ROLE_USER)->count(),

@@ -8,7 +8,7 @@
         <article class="template-builder-card"><h2>Informasi template</h2><dl><div><dt>Nama template</dt><dd>{{ $template->name }}</dd></div><div><dt>Bahasa</dt><dd>{{ \App\Models\WhatsappTemplate::LANGUAGES[$template->language] }}</dd></div><div><dt>Tipe header</dt><dd>{{ \App\Models\WhatsappTemplate::HEADER_TYPES[$template->header_type] }}</dd></div><div><dt>Diperbarui</dt><dd>{{ $template->updated_at->timezone('Asia/Jakarta')->format('d M Y, H:i') }} WIB</dd></div><div><dt>Status</dt><dd>@include('partials.whatsapp-approval')</dd></div><div><dt>Revisi</dt><dd>{{ $template->revision }}</dd></div></dl></article>
         <article class="template-builder-card"><h2>Persetujuan admin</h2>
             @if($template->isApproved())
-                <p>Template sudah disetujui dan tersedia pada pilihan template di menu Broadcast WhatsApp.</p>
+                <p>Template sudah disetujui dan siap digunakan untuk pengajuan campaign.</p><a class="button" href="{{ route('user.whatsapp.broadcasts.create', ['template' => $template->id]) }}">Buat Broadcast</a>
             @elseif($template->approval_status === \App\Models\WhatsappTemplate::REJECTED)
                 <p>Template ditolak. Perbaiki sesuai catatan admin, lalu ajukan ulang melalui Edit Template.</p>
             @else

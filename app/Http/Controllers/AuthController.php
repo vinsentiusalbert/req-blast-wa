@@ -38,6 +38,7 @@ class AuthController extends Controller
 
         RateLimiter::clear($key);
         $request->session()->regenerate();
+        $request->session()->put('show_wa_request_intro', true);
 
         return redirect()->route('dashboard');
     }
@@ -64,6 +65,7 @@ class AuthController extends Controller
         $user = User::create($data);
         Auth::login($user);
         $request->session()->regenerate();
+        $request->session()->put('show_wa_request_intro', true);
 
         return redirect()->route('dashboard');
     }

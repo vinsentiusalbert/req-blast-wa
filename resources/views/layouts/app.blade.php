@@ -71,10 +71,14 @@
                 @include('partials.notices')
                 @yield('content')
             </main>
-            <footer class="app-footer"><span>&copy; {{ date('Y') }} ShopAds</span><span>Portal pengelolaan akun</span></footer>
+            <footer class="app-footer"><span>&copy; {{ date('Y') }} ShopAds</span><button type="button" class="request-help-link" data-open-request-intro>Panduan request</button></footer>
         </div>
     </div>
     <script src="{{ asset('js/portal-navigation.js') }}" defer></script>
+    @auth
+        @include('partials.wa-request-intro')
+        <script src="{{ asset('js/wa-request-intro.js') }}" defer></script>
+    @endauth
     @stack('scripts')
 </body>
 </html>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\WhatsApp;
 
+use App\Actions\WhatsApp\StoreApprovedRecipients;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\WhatsappBroadcast;
@@ -44,7 +45,7 @@ class BroadcastReviewController extends Controller
         return view('admin.whatsapp.broadcasts.show', compact('broadcast', 'previewTemplate', 'records', 'variableColumns'));
     }
 
-    public function update(Request $request, WhatsappBroadcast $broadcast)
+    public function update(Request $request, WhatsappBroadcast $broadcast, StoreApprovedRecipients $storeRecipients)
     {
         $data = $request->validate([
             'status' => ['required', Rule::in(['approve', 'finish', 'reject'])],
@@ -54,7 +55,7 @@ class BroadcastReviewController extends Controller
             'rejection_reason.required' => 'Alasan penolakan wajib diisi.',
             'rejection_reason.max' => 'Alasan penolakan maksimal 2.000 karakter.',
         ]);
-        DB::transaction(function () use ($request, $broadcast, $data) {
+        DB::transaction(function () use ($request, $broadcast, $data, $storeRecipients) {
             $current = WhatsappBroadcast::lockForUpdate()->findOrFail($broadcast->id);
             $expected = $data['status'] === 'finish' ? 'approve' : 'pending';
             if ($current->status !== $expected || (int) $current->revision !== (int) $data['revision']) {
@@ -62,6 +63,9 @@ class BroadcastReviewController extends Controller
             }
             if ($data['status'] === 'approve' && ! $current->template->isApproved()) {
                 throw ValidationException::withMessages(['status' => 'Template harus disetujui sebelum broadcast dapat di-approve.']);
+            }
+            if ($data['status'] === 'approve') {
+                $storeRecipients->handle($current);
             }
             $prefix = match ($data['status']) {
                 'approve' => 'approved',
