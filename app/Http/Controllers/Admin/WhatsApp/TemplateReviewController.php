@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin\WhatsApp;
 use App\Actions\WhatsApp\ReviewTemplate;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\WhatsApp\ReviewTemplateRequest;
+use App\Models\User;
 use App\Models\WhatsappTemplate;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,14 +20,18 @@ class TemplateReviewController extends Controller
         $filters = $request->validate([
             'status' => ['nullable', Rule::in(array_keys(WhatsappTemplate::APPROVAL_LABELS))],
             'search' => ['nullable', 'string', 'max:100'],
+            'user_id' => ['nullable', 'integer', 'exists:users,id'],
         ]);
-        $status = $filters['status'] ?? WhatsappTemplate::PENDING;
+        $status = $filters['status'] ?? '';
         $templates = WhatsappTemplate::query()->with('user')
-            ->where('approval_status', $status)
+            ->when($status, fn ($query) => $query->where('approval_status', $status))
+            ->when($filters['user_id'] ?? null, fn ($query, $userId) => $query->where('user_id', $userId))
             ->when($filters['search'] ?? null, fn ($query, $search) => $query->where('name', 'like', '%'.$search.'%'))
             ->latest('updated_at')->latest('id')->paginate(10)->withQueryString();
 
-        return view('admin.whatsapp.templates.index', compact('templates', 'filters', 'status'));
+        $users = User::whereHas('whatsappTemplates')->orderBy('name')->get(['id', 'name', 'username']);
+
+        return view('admin.whatsapp.templates.index', compact('templates', 'filters', 'status', 'users'));
     }
 
     public function show(WhatsappTemplate $template): View

@@ -25,6 +25,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.role');
+        Route::prefix('whatsapp/broadcasts')->name('whatsapp.broadcasts.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admin\WhatsApp\BroadcastReviewController::class, 'index'])->name('index');
+            Route::get('/{broadcast}', [\App\Http\Controllers\Admin\WhatsApp\BroadcastReviewController::class, 'show'])->name('show');
+            Route::patch('/{broadcast}/review', [\App\Http\Controllers\Admin\WhatsApp\BroadcastReviewController::class, 'update'])->name('review');
+        });
         Route::prefix('whatsapp/templates')->name('whatsapp.templates.')->group(function () {
             Route::get('/', [TemplateReviewController::class, 'index'])->name('index');
             Route::get('/{template}', [TemplateReviewController::class, 'show'])->name('show');
@@ -34,11 +39,12 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::prefix('user')->name('user.')->middleware('role:user')->group(function () {
-        Route::view('/dashboard', 'user.dashboard')->name('dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'user'])->name('dashboard');
 
         Route::prefix('whatsapp')->name('whatsapp.')->group(function () {
             Route::get('/templates/{template}/asset', [TemplateController::class, 'asset'])->name('templates.asset');
             Route::resource('templates', TemplateController::class)->except('destroy');
+            Route::post('broadcasts/preview-csv', [BroadcastController::class, 'previewCsv'])->name('broadcasts.preview-csv');
             Route::resource('broadcasts', BroadcastController::class)->except('destroy');
         });
     });

@@ -6,8 +6,6 @@ use InvalidArgumentException;
 
 class RecipientParser
 {
-    public const MAX_RECIPIENTS = 1000;
-
     /** @return list<string> */
     public function parse(string $input): array
     {
@@ -15,26 +13,18 @@ class RecipientParser
         $recipients = [];
 
         foreach ($entries as $index => $entry) {
-            $number = preg_replace('/[\s()\-]/', '', trim($entry));
+            $number = trim($entry);
             if ($number === '') {
                 continue;
             }
 
-            if (str_starts_with($number, '08')) {
-                $number = '62'.substr($number, 1);
-            } elseif (str_starts_with($number, '+')) {
-                $number = substr($number, 1);
-            }
-
-            if (! preg_match('/^[1-9][0-9]{7,14}$/D', $number)) {
-                throw new InvalidArgumentException('Nomor penerima ke-'.($index + 1).' tidak valid. Gunakan 08…, 62…, atau kode negara dengan tanda +.');
+            if (! preg_match('/^62[0-9]{6,13}$/D', $number)) {
+                throw new InvalidArgumentException('Nomor penerima ke-'.($index + 1).' wajib diawali 62 dan hanya berisi angka (8?15 digit), contoh 6281234567890.');
             }
 
             $recipients[$number] = $number;
 
-            if (count($recipients) > self::MAX_RECIPIENTS) {
-                throw new InvalidArgumentException('Maksimal '.self::MAX_RECIPIENTS.' nomor unik dalam satu broadcast.');
-            }
+
         }
 
         if ($recipients === []) {

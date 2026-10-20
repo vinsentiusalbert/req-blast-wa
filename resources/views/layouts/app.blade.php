@@ -38,6 +38,11 @@
                                     @include('partials.portal-sidebar-icon', ['icon' => 'wa'])<span>Persetujuan Template</span>
                                 </a>
                             </div>
+                            <div class="portal-nav__item {{ request()->routeIs('admin.whatsapp.broadcasts.*') ? 'portal-nav__item--active' : '' }}">
+                                <a class="portal-nav__head portal-nav__link" href="{{ route('admin.whatsapp.broadcasts.index') }}" @if(request()->routeIs('admin.whatsapp.broadcasts.*')) aria-current="page" @endif>
+                                    @include('partials.portal-sidebar-icon', ['icon' => 'wa'])<span>Approval Broadcast</span>
+                                </a>
+                            </div>
                         @else
                             @include('user.whatsapp.partials.navigation')
                         @endif

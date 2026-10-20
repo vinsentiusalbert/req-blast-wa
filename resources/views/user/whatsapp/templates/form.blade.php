@@ -30,6 +30,7 @@
                     </div>
                     <textarea id="template-body" name="body" maxlength="{{ \App\Models\WhatsappTemplate::MAX_BODY_LENGTH }}" rows="7" placeholder="Tulis pesan yang ingin Anda sampaikan..." required>{{ old('body', $template->body) }}</textarea>
                     <span class="template-builder-editor__count" data-body-count>0/550 karakter</span>
+                    <small>Untuk personalisasi broadcast, gunakan variabel seperti <code>@{{nama}}</code> atau <code>@{{produk}}</code>. Nama variabel harus sama dengan nama kolom CSV setelah kolom pertama <code>msisdn</code>. Variabel juga dapat digunakan pada header teks.</small>
                 </div>
             </div>
             <div class="template-builder-inline-actions"><a class="button secondary" href="{{ route('user.whatsapp.templates.index') }}">Batal</a><button class="button" type="submit" data-save-template>{{ $template->exists ? 'Ajukan Ulang Template' : 'Ajukan Template' }} →</button></div>

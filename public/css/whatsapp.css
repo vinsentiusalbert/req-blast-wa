@@ -13,6 +13,8 @@
 .wa-builder .template-builder-card h2, .wa-builder .template-builder-preview__card h2 { font-size: 17px; margin: 0 0 8px; color: #333; }
 .wa-builder .template-builder-card > p { font-size: 13px; color: #64748b; line-height: 1.7; }
 .wa-builder .template-builder-field { margin-top: 20px; gap: 7px; }
+.wa-builder .wa-csv-download { color: #2563eb; font-size: 13px; align-self: flex-start; }
+.wa-builder .wa-csv-download:hover { color: #1d4ed8; text-decoration: underline; }
 .wa-builder .template-builder-field label { font-size: 13px; color: #475569; font-weight: 600; }
 .wa-builder .template-builder-field input, .wa-builder .template-builder-field select { min-height: 46px; font-size: 14px; }
 .wa-builder .template-builder-field small { font-size: 11px; color: #64748b; line-height: 1.6; }
@@ -73,7 +75,30 @@
 .wa-approval-rejected { color: #a11220; background: #fff1f2; border-color: #ffcbd1; }
 .wa-review-filters { padding-top: 24px; }
 .wa-review-note { min-height: 120px; }
+.wa-review-actions { margin-top: 24px; padding-top: 22px; border-top: 1px solid #e8edf2; }
+.wa-review-actions h3 { margin: 0; font-size: 14px; color: #1e293b; }
+.wa-review-actions .wa-review-actions__hint { margin: 6px 0 16px; font-size: 12px; line-height: 1.6; color: #64748b; }
+.wa-review-actions__buttons { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.wa-review-actions__buttons form { margin: 0; }
+.wa-review-actions__buttons .button { min-height: 42px; min-width: 104px; justify-content: center; border-radius: 6px; }
+.wa-review-actions .wa-reject-toggle { color: #b91c1c; border-color: #fecaca; background: #fff; }
+.wa-review-actions .wa-reject-toggle:hover { background: #fff1f2; border-color: #fca5a5; }
+.wa-rejection-panel { margin-top: 18px; padding: 20px; border: 1px solid #fecdd3; border-radius: 8px; background: #fffafa; }
+.wa-review-actions [hidden] { display: none !important; }
+.wa-rejection-panel label { display: block; font-size: 13px; font-weight: 600; color: #334155; }
+.wa-rejection-panel p { margin: 6px 0 12px; font-size: 12px; line-height: 1.6; color: #64748b; }
+.wa-rejection-panel textarea { display: block; box-sizing: border-box; width: 100%; min-height: 112px; padding: 12px 14px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; font: inherit; font-size: 13px; line-height: 1.7; resize: vertical; }
+.wa-rejection-panel textarea::placeholder { color: #94a3b8; }
+.wa-rejection-panel textarea:focus { outline: 2px solid #e11d48; outline-offset: 2px; border-color: #e11d48; }
+.wa-rejection-panel__meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 11px; color: #64748b; }
+.wa-rejection-panel__meta #rejection-error { color: #b91c1c; }
+.wa-rejection-panel__buttons { justify-content: flex-end; margin-top: 18px; }
+@media (max-width: 600px) {
+    .wa-rejection-panel { padding: 16px; }
+    .wa-rejection-panel textarea { font-size: 16px; }
+}
 .wa-review-comment { white-space: pre-wrap; overflow-wrap: anywhere; }
+.wa-review-header-image { display: block; width: 100%; max-width: 320px; max-height: 240px; object-fit: contain; border-radius: 6px; }
 .portal-nav__icon-wrap > svg { width: 22px; height: 22px; }
 .wa-summary-count { font-size: 28px; font-weight: 700; color: var(--brand-dark); }
 @media (max-width: 1200px) { .wa-builder { grid-template-columns: minmax(0,1fr) 300px; gap: 20px; } }

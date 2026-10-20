@@ -14,6 +14,6 @@ class WhatsappBroadcastPolicy
 
     public function update(User $user, WhatsappBroadcast $broadcast): bool
     {
-        return $this->view($user, $broadcast) && $broadcast->status === WhatsappBroadcast::STATUS_DRAFT;
+        return $this->view($user, $broadcast) && in_array($broadcast->status, [WhatsappBroadcast::STATUS_PENDING, WhatsappBroadcast::STATUS_REJECT], true);
     }
 }

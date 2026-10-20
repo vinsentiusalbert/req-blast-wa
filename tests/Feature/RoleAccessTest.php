@@ -22,7 +22,7 @@ class RoleAccessTest extends TestCase
     {
         $user = User::factory()->create();
         $this->actingAs($user);
-        $this->get('/user/dashboard')->assertOk()->assertSee($user->email);
+        $this->get('/user/dashboard')->assertOk()->assertSee('Total template')->assertSee('Total campaign');
         $this->get('/admin/dashboard')->assertForbidden();
         $this->get('/admin/users')->assertForbidden();
         $this->patch('/admin/users/'.$user->id.'/role', ['role' => 'admin'])->assertForbidden();

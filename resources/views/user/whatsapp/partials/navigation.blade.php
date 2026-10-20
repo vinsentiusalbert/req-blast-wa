@@ -5,9 +5,9 @@
         <span class="portal-nav__caret" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
     </button>
     <div class="portal-subnav" id="waba-submenu" @if(!request()->routeIs('user.whatsapp.*')) inert @endif>
-        <a class="portal-subnav__item {{ request()->routeIs('user.whatsapp.templates.*') ? 'portal-subnav__item--active' : '' }}" href="{{ route('user.whatsapp.templates.create') }}" @if(request()->routeIs('user.whatsapp.templates.*')) aria-current="page" @endif>
+        <a class="portal-subnav__item {{ request()->routeIs('user.whatsapp.templates.*') ? 'portal-subnav__item--active' : '' }}" href="{{ route('user.whatsapp.templates.index') }}" @if(request()->routeIs('user.whatsapp.templates.*')) aria-current="page" @endif>
             <span class="portal-subnav__icon" aria-hidden="true">@include('partials.portal-sidebar-icon', ['icon' => 'template', 'subnav' => true])</span>
-            <span>Buat Template</span>
+            <span>Template</span>
         </a>
         <a class="portal-subnav__item {{ request()->routeIs('user.whatsapp.broadcasts.*') ? 'portal-subnav__item--active' : '' }}" href="{{ route('user.whatsapp.broadcasts.index') }}" @if(request()->routeIs('user.whatsapp.broadcasts.*')) aria-current="page" @endif>
             <span class="portal-subnav__icon" aria-hidden="true">@include('partials.portal-sidebar-icon', ['icon' => 'broadcast', 'subnav' => true])</span>

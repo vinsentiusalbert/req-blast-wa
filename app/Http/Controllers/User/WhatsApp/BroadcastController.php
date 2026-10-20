@@ -6,6 +6,8 @@ use App\Actions\WhatsApp\SaveBroadcastDraft;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\WhatsApp\SaveBroadcastRequest;
 use App\Models\WhatsappBroadcast;
+use App\Services\WhatsApp\BroadcastCsv;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -13,6 +15,19 @@ use Illuminate\View\View;
 
 class BroadcastController extends Controller
 {
+    public function previewCsv(Request $request, BroadcastCsv $csv): JsonResponse
+    {
+        $request->validate([
+            'recipients_csv' => ['required', 'file', 'extensions:csv'],
+            'whatsapp_template_id' => ['required', 'integer'],
+        ]);
+        $template = $request->user()->whatsappTemplates()->approved()->findOrFail($request->input('whatsapp_template_id'));
+        $rows = $csv->parse($request->file('recipients_csv')->getRealPath());
+        $csv->validateVariables($template, $rows);
+
+        return response()->json(['first' => $rows[0], 'count' => count($rows)]);
+    }
+
     public function index(Request $request): View
     {
         $broadcasts = $request->user()->whatsappBroadcasts()->with('template')->latest('id')->paginate(10);
@@ -39,7 +54,7 @@ class BroadcastController extends Controller
     {
         $broadcast = $action->handle($request->user(), $request->validated());
 
-        return to_route('user.whatsapp.broadcasts.show', $broadcast)->with('status', 'Draft broadcast berhasil disimpan. Pesan belum dikirim.');
+        return to_route('user.whatsapp.broadcasts.show', $broadcast)->with('status', 'Broadcast berhasil disimpan dengan status Pending dan masuk ke daftar approval admin.');
     }
 
     public function show(WhatsappBroadcast $broadcast): View
@@ -47,7 +62,13 @@ class BroadcastController extends Controller
         Gate::authorize('view', $broadcast);
         $broadcast->load('template');
 
-        return view('user.whatsapp.broadcasts.show', compact('broadcast'));
+        $previewTemplate = clone $broadcast->template;
+        $csv = new BroadcastCsv;
+        $first = $broadcast->recipient_records[0] ?? [];
+        $previewTemplate->body = $csv->render($previewTemplate->body, $first);
+        $previewTemplate->header_text = $csv->render($previewTemplate->header_text, $first);
+
+        return view('user.whatsapp.broadcasts.show', compact('broadcast', 'previewTemplate'));
     }
 
     public function edit(Request $request, WhatsappBroadcast $broadcast): View
@@ -61,7 +82,7 @@ class BroadcastController extends Controller
     {
         $action->handle($request->user(), $request->validated(), $broadcast);
 
-        return to_route('user.whatsapp.broadcasts.show', $broadcast)->with('status', 'Draft broadcast berhasil diperbarui.');
+        return to_route('user.whatsapp.broadcasts.show', $broadcast)->with('status', 'Broadcast berhasil diperbarui dan diajukan dengan status Pending.');
     }
 
     private function form(Request $request, WhatsappBroadcast $broadcast): View

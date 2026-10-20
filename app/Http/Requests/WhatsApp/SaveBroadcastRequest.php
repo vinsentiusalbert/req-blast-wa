@@ -23,7 +23,8 @@ class SaveBroadcastRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:150'],
             'whatsapp_template_id' => ['required', 'integer', Rule::exists('whatsapp_templates', 'id')->where('user_id', $this->user()->id)->where('approval_status', WhatsappTemplate::APPROVED)],
-            'recipients' => ['bail', 'required', 'string', 'max:40000', new RecipientList],
+            'recipients_csv' => [Rule::requiredIf(! $this->route('broadcast') && ! $this->has('recipients')), 'file', 'extensions:csv'],
+            'recipients' => ['bail', 'sometimes', 'required', 'string', new RecipientList],
         ];
     }
 
@@ -35,7 +36,6 @@ class SaveBroadcastRequest extends FormRequest
             'whatsapp_template_id.required' => 'Pilih template terlebih dahulu.',
             'whatsapp_template_id.exists' => 'Pilih template milik Anda yang sudah disetujui admin.',
             'recipients.required' => 'Masukkan minimal satu nomor penerima.',
-            'recipients.max' => 'Daftar penerima terlalu panjang. Maksimal 1.000 nomor unik.',
         ];
     }
 }

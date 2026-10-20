@@ -12,7 +12,7 @@ Aplikasi Laravel 12 dengan autentikasi session dan dua role: `admin` dan `user`.
 - Role akun sendiri tidak dapat diubah dari halaman admin.
 - Password di-hash, proteksi CSRF, regenerasi session saat login, dan pembatasan percobaan login.
 - Tampilan Blade responsif berbahasa Indonesia. CSS lokal, tidak membutuhkan build npm.
-- Menu Broadcast WhatsApp untuk user: buat/edit template dengan preview, kemudian buat/edit draft broadcast.
+- Menu Broadcast WhatsApp untuk user: buat/edit template dengan preview, kemudian buat/edit broadcast Pending.
 
 ## Tampilan ShopAds
 
@@ -26,10 +26,10 @@ Menu **Template WhatsApp** dan **Broadcast WhatsApp** terpisah pada sidebar user
 
 1. User membuat template: nama unik per user, bahasa, display name opsional (kosong secara default), header teks/gambar, pesan, footer, dan tombol.
 2. Ajukan template. Status awal adalah **Menunggu persetujuan**. Admin melihat preview, menyetujui, atau menolak dengan alasan.
-3. User membuka menu **Broadcast WhatsApp**, memilih template miliknya yang **Disetujui**, lalu mengisi nama broadcast dan nomor penerima. Nomor `08` dinormalisasi menjadi `628`, duplikat disatukan, maksimal 1.000 nomor unik.
-4. Simpan draft dan periksa preview serta ringkasan penerimanya.
+3. User membuka menu **Broadcast WhatsApp**, memilih template miliknya yang **Disetujui**, lalu mengisi nama broadcast dan mengunggah CSV penerima. Kolom pertama wajib `msisdn`, diikuti kolom variabel sesuai template. Nomor wajib diawali `62` dan hanya berisi angka. Duplikat ditolak, tanpa batas jumlah penerima.
+4. Simpan broadcast: status awal `pending`. Admin membuka **Approval Broadcast**, memeriksa detail, lalu **Approve** (`approve`) dan **Finish** (`finish`). Admin juga dapat menolak broadcast Pending melalui **Reject** dengan alasan wajib (maksimal 2.000 karakter). User melihat alasan pada daftar, detail, dan halaman edit. User dapat mengedit saat Pending atau Reject; menyimpan perbaikan mengajukan ulang sebagai Pending dan menghapus alasan penolakan sebelumnya. Broadcast Approve/Finish tetap terkunci.
 
-Persetujuan template dilakukan oleh admin aplikasi. Pengiriman pesan dan koneksi ke provider WhatsApp belum tersedia. Persetujuan admin aplikasi berbeda dari persetujuan provider. Setiap edit template menaikkan revisi, menghapus persetujuan sebelumnya, dan mengajukan ulang. Draft yang memakai template tersebut terblokir sampai admin menyetujui revisi baru. Keputusan admin memeriksa revisi dan status dalam transaksi, sehingga form peninjauan yang sudah kedaluwarsa tidak dapat menyetujui konten baru. Batas 550 karakter pesan dan 10 tombol adalah batas aplikasi yang mengikuti builder referensi; validasi provider perlu disesuaikan ketika integrasi ditambahkan.
+Persetujuan template dilakukan oleh admin aplikasi. Pengiriman pesan dan koneksi ke provider WhatsApp belum tersedia. Persetujuan admin aplikasi berbeda dari persetujuan provider. Setiap edit template menaikkan revisi, menghapus persetujuan sebelumnya, dan mengajukan ulang. Approval broadcast Pending yang memakai template tersebut terblokir sampai admin menyetujui revisi baru. Keputusan admin memeriksa revisi dan status dalam transaksi, sehingga form peninjauan yang sudah kedaluwarsa tidak dapat menyetujui konten baru. Batas 550 karakter pesan dan 10 tombol adalah batas aplikasi yang mengikuti builder referensi; validasi provider perlu disesuaikan ketika integrasi ditambahkan.
 
 Gambar header mendukung JPG/PNG/WebP hingga 5 MB, disimpan di disk `local` (privat), dan disajikan lewat route yang memeriksa pemilik. Tidak memerlukan `storage:link`. Untuk instalasi dari versi sebelumnya, jalankan `php artisan migrate`.
 
@@ -107,6 +107,20 @@ Seeder hanya membuat akun demo pada environment `local` / `testing` dan tidak me
 - `public/css/app.css`: stylesheet yang langsung dapat digunakan.
 
 ## Pengujian
+
+### Broadcast dengan CSV dan variabel
+
+Pada halaman broadcast, unggah CSV UTF-8 dengan pemisah koma (tanpa batas jumlah penerima di aplikasi). Kolom pertama wajib `msisdn`; nama kolom selanjutnya bebas dan peka huruf besar/kecil:
+
+```csv
+msisdn,nama,produk
+6281234567890,Budi,Sepatu
+6281234567891,Siti,Tas
+```
+
+Template `Halo {{nama}}, produk {{produk}} tersedia.` ditampilkan pada preview sebagai `Halo Budi, produk Sepatu tersedia.` Variabel didukung pada isi pesan dan header teks. Semua variabel template wajib memiliki kolom dan nilai pada setiap record. Nomor wajib diawali `62` dan hanya berisi angka; nomor duplikat ditolak agar data personalisasi tidak ambigu. Preview upload dan halaman detail menggunakan record pertama. Data setiap record tersimpan bersama draft; saat edit, upload CSV baru mengganti seluruh penerima, sedangkan tanpa upload data lama dipertahankan. Setelah validasi form gagal, file perlu dipilih ulang.
+
+Jalankan `php artisan migrate` untuk menambahkan penyimpanan record CSV pada instalasi lama. Broadcast mengikuti status Pending ? Approve ? Finish yang diproses manual oleh admin. Waktu dan admin pemroses tersimpan. Migrasi juga mengubah draft lama menjadi Pending. Perubahan status ini tidak memanggil layanan pengiriman WhatsApp.
 
 ```sh
 php artisan test
