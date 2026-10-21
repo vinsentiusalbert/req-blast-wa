@@ -1,11 +1,13 @@
 <?php
 
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\WhatsApp\BroadcastReviewController;
 use App\Http\Controllers\Admin\WhatsApp\TemplateReviewController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\User\WhatsApp\BroadcastController;
 use App\Http\Controllers\User\WhatsApp\TemplateController;
+use App\Http\Controllers\WhatsAppReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -23,12 +25,15 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'admin'])->name('dashboard');
+        Route::get('/whatsapp/reports', [WhatsAppReportController::class, 'index'])->name('whatsapp.reports.index');
+        Route::get('/whatsapp/reports/{broadcast}', [WhatsAppReportController::class, 'show'])->name('whatsapp.reports.show');
+        Route::get('/whatsapp/reports/{broadcast}/export', [WhatsAppReportController::class, 'export'])->name('whatsapp.reports.export');
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.role');
         Route::prefix('whatsapp/broadcasts')->name('whatsapp.broadcasts.')->group(function () {
-            Route::get('/', [\App\Http\Controllers\Admin\WhatsApp\BroadcastReviewController::class, 'index'])->name('index');
-            Route::get('/{broadcast}', [\App\Http\Controllers\Admin\WhatsApp\BroadcastReviewController::class, 'show'])->name('show');
-            Route::patch('/{broadcast}/review', [\App\Http\Controllers\Admin\WhatsApp\BroadcastReviewController::class, 'update'])->name('review');
+            Route::get('/', [BroadcastReviewController::class, 'index'])->name('index');
+            Route::get('/{broadcast}', [BroadcastReviewController::class, 'show'])->name('show');
+            Route::patch('/{broadcast}/review', [BroadcastReviewController::class, 'update'])->name('review');
         });
         Route::prefix('whatsapp/templates')->name('whatsapp.templates.')->group(function () {
             Route::get('/', [TemplateReviewController::class, 'index'])->name('index');
@@ -40,6 +45,9 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('user')->name('user.')->middleware('role:user')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'user'])->name('dashboard');
+        Route::get('/whatsapp/reports', [WhatsAppReportController::class, 'index'])->name('whatsapp.reports.index');
+        Route::get('/whatsapp/reports/{broadcast}', [WhatsAppReportController::class, 'show'])->name('whatsapp.reports.show');
+        Route::get('/whatsapp/reports/{broadcast}/export', [WhatsAppReportController::class, 'export'])->name('whatsapp.reports.export');
 
         Route::prefix('whatsapp')->name('whatsapp.')->group(function () {
             Route::get('/templates/{template}/asset', [TemplateController::class, 'asset'])->name('templates.asset');

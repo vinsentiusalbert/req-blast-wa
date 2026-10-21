@@ -22,11 +22,11 @@ class WhatsappBroadcast extends Model
 
     protected $attributes = ['status' => self::STATUS_PENDING];
 
-    protected $fillable = ['name', 'whatsapp_template_id', 'recipients', 'recipient_count', 'recipient_records'];
+    protected $fillable = ['name', 'whatsapp_template_id', 'recipients', 'recipient_count', 'recipient_records', 'scheduled_at'];
 
     protected function casts(): array
     {
-        return ['recipients' => 'array', 'recipient_count' => 'integer', 'recipient_records' => 'array'];
+        return ['recipients' => 'array', 'recipient_count' => 'integer', 'recipient_records' => 'array', 'scheduled_at' => 'immutable_datetime'];
     }
 
     public function user(): BelongsTo

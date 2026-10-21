@@ -12,7 +12,7 @@
                 <div><dt>Penerima</dt><dd>{{ number_format($broadcast->recipient_count, 0, ',', '.') }}</dd></div>
                 @if($broadcast->approved_at)<div><dt>Waktu Approve</dt><dd>{{ \Illuminate\Support\Carbon::parse($broadcast->approved_at)->timezone('Asia/Jakarta')->format('d M Y H:i') }} WIB</dd></div>@endif
                 @if($broadcast->finished_at)<div><dt>Waktu Finish</dt><dd>{{ \Illuminate\Support\Carbon::parse($broadcast->finished_at)->timezone('Asia/Jakarta')->format('d M Y H:i') }} WIB</dd></div>@endif
-            </dl>
+            <div><dt>Jadwal broadcast</dt><dd>{{ $broadcast->scheduled_at ? $broadcast->scheduled_at->timezone('Asia/Jakarta')->format('d M Y, H:i').' WIB' : 'Belum ditentukan' }}</dd></div></dl>
             @if($broadcast->status === 'reject')
                 <div class="notice error"><strong>Alasan penolakan</strong><p class="wa-review-comment">{{ $broadcast->rejection_reason }}</p></div>
             @endif

@@ -46,6 +46,11 @@
                         @else
                             @include('user.whatsapp.partials.navigation')
                         @endif
+                        <div class="portal-nav__item {{ request()->routeIs('*.whatsapp.reports.*') ? 'portal-nav__item--active' : '' }}">
+                            <a class="portal-nav__head portal-nav__link" href="{{ route((auth()->user()->isAdmin() ? 'admin' : 'user').'.whatsapp.reports.index') }}" @if(request()->routeIs('*.whatsapp.reports.*')) aria-current="page" @endif>
+                                @include('partials.portal-sidebar-icon', ['icon' => 'dashboard'])<span>Report WhatsApp</span>
+                            </a>
+                        </div>
                     @endauth
                 </nav>
                 @auth

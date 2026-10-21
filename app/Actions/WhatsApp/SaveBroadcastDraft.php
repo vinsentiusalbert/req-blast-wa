@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\WhatsappBroadcast;
 use App\Services\WhatsApp\BroadcastCsv;
 use App\Services\WhatsApp\RecipientParser;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -45,6 +46,10 @@ class SaveBroadcastDraft
                 'recipients' => $recipients,
                 'recipient_count' => count($recipients),
                 'recipient_records' => $records,
+                'scheduled_at' => array_key_exists('schedule_date', $data) || array_key_exists('schedule_time', $data)
+                    ? (! empty($data['schedule_date']) && ! empty($data['schedule_time'])
+                        ? CarbonImmutable::createFromFormat('!Y-m-d H:i', $data['schedule_date'].' '.$data['schedule_time'], 'Asia/Jakarta')->utc() : null)
+                    : $draft->scheduled_at,
             ])->save();
 
             return $draft;

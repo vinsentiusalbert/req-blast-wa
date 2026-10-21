@@ -3,7 +3,7 @@
 @section('content')
 <div class="page-heading">
     <div><span class="eyebrow">DASHBOARD ADMIN</span><h1>Halo, {{ auth()->user()->name }}<span class="accent-dot">.</span></h1><p class="muted">Selamat datang kembali. Berikut ringkasan akun dan pengguna Anda.</p></div>
-    <span class="date-label">{{ now()->format('d / m / Y') }}</span>
+    <span class="date-label">{{ now()->timezone('Asia/Jakarta')->format('d / m / Y') }}</span>
 </div>
 <div class="stats request-queue">
     <a class="card stat-card request-queue__link" href="{{ route('admin.whatsapp.templates.index', ['status' => 'pending']) }}"><h2 class="stat-heading">Template menunggu review</h2><strong class="stat">{{ $pendingTemplates }}</strong><small>Tinjau template &rarr;</small></a>
@@ -21,7 +21,7 @@
     <div class="section-heading"><div><span class="eyebrow">DAFTAR PENGGUNA</span><h2>Pengguna terbaru</h2><p class="muted">Lima akun yang terakhir bergabung.</p></div><a class="text-link" href="{{ route('admin.users.index') }}">Lihat semua <span aria-hidden="true">↗</span></a></div>
     <div class="table-scroll" tabindex="0" role="region" aria-label="Daftar pengguna terbaru"><table><thead><tr><th>Pengguna</th><th>Role</th><th>Bergabung</th></tr></thead><tbody>
         @forelse($recentUsers as $user)
-            <tr><td><div class="person"><span class="avatar" aria-hidden="true">{{ mb_substr($user->name, 0, 1) }}</span><div><strong>{{ $user->name }}</strong><span class="cell-detail">{{ $user->email }}</span></div></div></td><td><span class="badge {{ $user->role }}">{{ ucfirst($user->role) }}</span></td><td>{{ $user->created_at->format('d M Y') }}</td></tr>
+            <tr><td><div class="person"><span class="avatar" aria-hidden="true">{{ mb_substr($user->name, 0, 1) }}</span><div><strong>{{ $user->name }}</strong><span class="cell-detail">{{ $user->email }}</span></div></div></td><td><span class="badge {{ $user->role }}">{{ ucfirst($user->role) }}</span></td><td>{{ $user->created_at->timezone('Asia/Jakarta')->format('d M Y') }}</td></tr>
         @empty
             <tr><td colspan="3" class="empty">Belum ada pengguna.</td></tr>
         @endforelse

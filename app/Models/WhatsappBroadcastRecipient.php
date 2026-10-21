@@ -11,7 +11,7 @@ class WhatsappBroadcastRecipient extends Model
 
     protected function casts(): array
     {
-        return ['variables' => 'array'];
+        return ['variables' => 'array', 'attempts' => 'integer', 'sent_at' => 'datetime', 'failed_at' => 'datetime', 'last_attempt_at' => 'datetime'];
     }
 
     public function broadcast(): BelongsTo

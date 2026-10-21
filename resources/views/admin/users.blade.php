@@ -14,7 +14,7 @@
             <tr>
                 <td><strong>{{ $user->name }}</strong>@if($user->is(auth()->user())) <small>(Anda)</small>@endif<span class="cell-detail">{{ '@'.$user->username }}</span><span class="cell-detail">{{ $user->email }}</span></td>
                 <td><span class="badge {{ $user->role }}">{{ ucfirst($user->role) }}</span></td>
-                <td>{{ $user->created_at->format('d M Y') }}</td>
+                <td>{{ $user->created_at->timezone('Asia/Jakarta')->format('d M Y') }}</td>
                 <td>
                     @if($user->is(auth()->user()))
                         <span class="muted">Akun Anda sendiri</span>

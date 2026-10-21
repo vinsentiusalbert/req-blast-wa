@@ -130,3 +130,11 @@ php vendor/bin/pint --test
 Pengujian memakai SQLite `:memory:` sehingga tidak mengubah database aplikasi. Cakupan meliputi autentikasi, validasi registrasi, rate limiting, pemisahan akses, penolakan eskalasi role, perubahan role, pencarian, pagination, dan seeder.
 
 Referensi: [autentikasi Laravel](https://laravel.com/docs/12.x/authentication), [middleware](https://laravel.com/docs/12.x/middleware).
+
+## Report WhatsApp
+
+Menu **Report WhatsApp** tersedia untuk user (broadcast sendiri) dan admin (seluruh user). Filter meliputi tanggal pembuatan broadcast, status broadcast, serta user khusus admin. Detail menampilkan status per penerima, jumlah percobaan, waktu pengiriman/gagal, dan alasan gagal. Pencarian nomor dan filter status juga berlaku pada unduhan CSV.
+
+Jalankan `php artisan migrate` untuk menambahkan kolom pelaporan penerima. Status pengiriman `pending`, `sent`, dan `failed` dibaca dari tabel penerima; status broadcast Finish tidak dianggap sebagai bukti terkirim. Fitur ini tidak mengirim pesan atau mengisi hasil pengiriman secara otomatis; integrasi pengiriman perlu mencatat hasil ke tabel penerima.
+
+Report mendukung unduhan Excel `.xlsx` dan CSV dari halaman detail, mengikuti filter aktif. Excel mempertahankan nomor sebagai teks, membekukan baris judul, dan menyediakan filter kolom. Informasi kegagalan lama disembunyikan pada penerima yang sudah terkirim; kartu Gagal hanya tampil bila ada penerima berstatus gagal. Ekspor Excel memerlukan ekstensi PHP zip dan xmlwriter.

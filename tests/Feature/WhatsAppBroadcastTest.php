@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Models\WhatsappBroadcast;
 use App\Models\WhatsappTemplate;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
@@ -12,6 +13,29 @@ use Tests\TestCase;
 class WhatsAppBroadcastTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_broadcast_schedule_uses_jakarta_and_rejects_past_times(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-10-22 10:30:00', 'Asia/Jakarta'));
+        $user = User::factory()->create();
+        $template = $this->template($user);
+        $data = ['name' => 'Scheduled', 'whatsapp_template_id' => $template->id, 'recipients' => '6281234567890'];
+        $this->actingAs($user);
+        $this->get(route('user.whatsapp.broadcasts.create'))->assertOk()->assertSee('schedule_date')->assertSee('schedule_time');
+        foreach ([['2026-10-21', '23:59'], ['2026-10-22', '10:29'], ['2026-10-22', ''], ['', '11:00'], ['2026-02-30', '11:00']] as [$date, $time]) {
+            $this->post(route('user.whatsapp.broadcasts.store'), $data + ['schedule_date' => $date, 'schedule_time' => $time])->assertSessionHasErrors();
+        }
+        $this->assertDatabaseCount('whatsapp_broadcasts', 0);
+        $this->post(route('user.whatsapp.broadcasts.store'), $data + ['schedule_date' => '2026-10-23', 'schedule_time' => '01:15'])->assertSessionHasNoErrors();
+        $broadcast = $user->whatsappBroadcasts()->sole();
+        $this->assertSame('2026-10-22 18:15:00', $broadcast->scheduled_at->utc()->format('Y-m-d H:i:s'));
+        $this->get(route('user.whatsapp.broadcasts.edit', $broadcast))->assertOk()->assertSee('2026-10-23')->assertSee('01:15');
+        $this->get(route('user.whatsapp.broadcasts.show', $broadcast))->assertOk()->assertSee('23 Oct 2026, 01:15 WIB');
+        $this->put(route('user.whatsapp.broadcasts.update', $broadcast), $data + ['schedule_date' => '2026-10-22', 'schedule_time' => '11:00'])->assertSessionHasNoErrors();
+        $this->assertSame('2026-10-22 04:00:00', $broadcast->fresh()->scheduled_at->utc()->format('Y-m-d H:i:s'));
+        $this->put(route('user.whatsapp.broadcasts.update', $broadcast), $data + ['schedule_date' => '', 'schedule_time' => ''])->assertSessionHasNoErrors();
+        $this->assertNull($broadcast->fresh()->scheduled_at);
+    }
 
     public function test_csv_personalization_preview_storage_and_edit_preservation(): void
     {
