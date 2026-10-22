@@ -12,12 +12,13 @@
                     <button type="button" class="portal-sidebar__close" data-menu-close aria-label="Tutup menu"><span></span><span></span></button>
                 </div>
                 <a class="portal-brand" href="{{ route('dashboard') }}">
-                    <img src="{{ asset('assets/shopads-icon.svg') }}" alt="" class="portal-brand__logo">
-                    <span class="portal-brand__text">ShopAds</span>
+                    <img src="{{ asset('assets/ruang-pesan.svg') }}" alt="" class="portal-brand__logo">
+                    <span class="portal-brand__text">Ruang Pesan</span>
                 </a>
                 @auth
                     <a class="portal-create-btn portal-create-btn--link" href="{{ auth()->user()->isAdmin() ? route('admin.users.index') : route('user.whatsapp.broadcasts.create') }}">{{ auth()->user()->isAdmin() ? 'Kelola Pengguna' : '+ Buat Broadcast' }}</a>
                 @endauth
+                <p class="sidebar-section-label">WORKSPACE</p>
                 <nav class="portal-nav" aria-label="Navigasi utama">
                     <div class="portal-nav__item {{ request()->routeIs('*.dashboard') ? 'portal-nav__item--active' : '' }}">
                         <a class="portal-nav__head portal-nav__link" href="{{ route('dashboard') }}" @if(request()->routeIs('*.dashboard')) aria-current="page" @endif>
@@ -63,7 +64,7 @@
             <header class="portal-topbar">
                 <div class="portal-topbar__left">
                     <button type="button" class="portal-burger" data-menu-toggle aria-label="Buka menu" aria-controls="mobile-menu" aria-expanded="false"><span></span><span></span><span></span></button>
-                    <div class="portal-topbar__spacer">ShopAds<span class="portal-topbar__context"> / @yield('title', 'Dashboard')</span></div>
+                    <div class="portal-topbar__spacer">Ruang Pesan<span class="portal-topbar__context"> / @yield('title', 'Dashboard')</span></div>
                 </div>
                 @auth
                     <div class="portal-topbar__actions">
@@ -76,7 +77,7 @@
                 @include('partials.notices')
                 @yield('content')
             </main>
-            <footer class="app-footer"><span>&copy; {{ date('Y') }} ShopAds</span><button type="button" class="request-help-link" data-open-request-intro>Panduan request</button></footer>
+            <footer class="app-footer"><span>&copy; {{ date('Y') }} Ruang Pesan</span><button type="button" class="request-help-link" data-open-request-intro>Panduan request</button></footer>
         </div>
     </div>
     <script src="{{ asset('js/portal-navigation.js') }}" defer></script>

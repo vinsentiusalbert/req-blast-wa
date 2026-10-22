@@ -1,5 +1,5 @@
 /* Adaptations for this application's account screens.
-   Base ShopAds styles: public/css/auth-portal.css, copied from shop-myads. */
+   Base component styles: public/css/auth-portal.css. */
 html { color-scheme: light; }
 button, input, select { font: inherit; }
 button, a { touch-action: manipulation; }

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 @section('title', 'Kelola Pengguna')
 @section('content')
-<div class="page-heading"><div><span class="eyebrow">MANAJEMEN PENGGUNA</span><h1>Pengguna<span class="accent-dot">.</span></h1><p class="muted">Cari pengguna dan kelola peran serta akses akun mereka.</p></div><span class="badge">{{ $users->total() }} akun</span></div>
+<div class="page-heading"><div><span class="eyebrow">MANAJEMEN PENGGUNA</span><h1>Pengguna<span class="accent-dot">.</span></h1><p class="muted">{{ $users->total() }} akun terdaftar. Tambah pengguna dan kelola peran serta akses mereka.</p></div><a class="button" href="{{ route('admin.users.create') }}">+ Tambah pengguna</a></div>
 <section class="card table-card">
     <form class="search-form" method="GET" action="{{ route('admin.users.index') }}">
         <label class="sr-only" for="search">Cari nama, username, atau email</label>

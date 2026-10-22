@@ -1,12 +1,12 @@
-# ShopAds — Laravel Admin & User
+# Ruang Pesan — Laravel Admin & User
 
 Aplikasi Laravel 12 dengan autentikasi session dan dua role: `admin` dan `user`.
 
 ## Fitur
 
-- Login menggunakan username, registrasi, ingat saya, dan logout.
+- Login menggunakan username, ingat saya, dan logout. Pembuatan akun hanya melalui admin.
 - Username unik (3–50 karakter), tidak membedakan huruf besar/kecil; email tetap menjadi informasi akun.
-- Registrasi publik selalu menghasilkan role `user`.
+- Pendaftaran publik dinonaktifkan. Admin membuat akun melalui **Pengguna → Tambah pengguna**; akun baru memiliki role `user` dan admin tetap login pada akunnya sendiri.
 - Dashboard terpisah sesuai role; akses tanpa izin menghasilkan HTTP 403.
 - Admin dapat mencari pengguna, melihat daftar dengan pagination, dan mengubah role pengguna lain.
 - Role akun sendiri tidak dapat diubah dari halaman admin.
@@ -14,15 +14,15 @@ Aplikasi Laravel 12 dengan autentikasi session dan dua role: `admin` dan `user`.
 - Tampilan Blade responsif berbahasa Indonesia. CSS lokal, tidak membutuhkan build npm.
 - Menu Broadcast WhatsApp untuk user: buat/edit template dengan preview, kemudian buat/edit broadcast Pending.
 
-## Tampilan ShopAds
+## Tampilan Ruang Pesan
 
-UI diadaptasi dari source lokal `D:\1 Kerja\shop-myads`: stylesheet `auth-portal.css`, logo ShopAds, ikon sidebar, dan script navigasi mobile. Login mengikuti layout dua kolom merah/putih; registrasi, dashboard, dan daftar pengguna memakai identitas visual yang sama. Penyesuaian komponen akun ada di `public/css/app.css`.
+Identitas Ruang Pesan memakai dasar putih, teks charcoal, dan aksen hijau lembut. Sistem visual bersama ada di `public/css/white-theme.css`, dimuat setelah stylesheet komponen agar login, registrasi, dashboard, template, broadcast, persetujuan, dan laporan konsisten. Logo dan favicon ada di `public/assets/ruang-pesan.svg`. Navigasi mendukung desktop dan menu mobile dengan akses keyboard.
 
 Login tetap menggunakan username dan autentikasi Laravel lokal. Menu menyesuaikan role admin/user dan fitur yang tersedia. Font Plus Jakarta Sans dan Space Grotesk dimuat dari Bunny Fonts, dengan fallback Arial jika tidak tersedia.
 
 ## Broadcast WhatsApp
 
-Menu **Template WhatsApp** dan **Broadcast WhatsApp** terpisah pada sidebar user. Admin meninjau pengajuan di menu **Persetujuan Template**. Susunan builder diadaptasi dari `shop-myads/resources/views/campaign-wa-template/partials/builder-form.blade.php`, menggunakan stylesheet ShopAds yang sudah disalin dan penyesuaian pada `public/css/whatsapp.css`.
+Menu **Template WhatsApp** dan **Broadcast WhatsApp** terpisah pada sidebar user. Admin meninjau pengajuan di menu **Persetujuan Template**. Komponen builder dan pratinjau pesan menggunakan `public/css/whatsapp.css` dengan sistem visual bersama Ruang Pesan.
 
 1. User membuat template: nama unik per user, bahasa, display name opsional (kosong secara default), header teks/gambar, pesan, footer, dan tombol.
 2. Ajukan template. Status awal adalah **Menunggu persetujuan**. Admin melihat preview, menyetujui, atau menolak dengan alasan.
@@ -87,10 +87,11 @@ Seeder hanya membuat akun demo pada environment `local` / `testing` dan tidak me
 
 | Rute | Akses |
 | --- | --- |
-| `/login`, `/register` | Tamu |
+| `/login` | Tamu |
 | `/dashboard` | Pengguna login, diarahkan sesuai role |
 | `/admin/dashboard` | Admin |
 | `/admin/users` | Admin |
+| `GET /admin/users/create`, `POST /admin/users` | Admin, membuat akun pengguna |
 | `PATCH /admin/users/{user}/role` | Admin, untuk akun lain |
 | `/user/dashboard` | User |
 | `POST /logout` | Pengguna login |
@@ -99,8 +100,8 @@ Seeder hanya membuat akun demo pada environment `local` / `testing` dan tidak me
 
 - `app/Models/User.php`: konstanta dan pemeriksaan role; role tidak mass assignable.
 - `app/Http/Middleware/EnsureUserHasRole.php`: pembatasan akses role di server.
-- `app/Http/Controllers/AuthController.php`: login, registrasi, logout.
-- `app/Http/Controllers/Admin/UserController.php`: daftar, pencarian, perubahan role.
+- `app/Http/Controllers/AuthController.php`: login dan logout.
+- `app/Http/Controllers/Admin/UserController.php`: pembuatan akun, daftar, pencarian, perubahan role.
 - `bootstrap/app.php`: pendaftaran middleware `role`.
 - `routes/web.php`: rute dan pembatasan akses.
 - `resources/views`: halaman Blade.
@@ -127,7 +128,7 @@ php artisan test
 php vendor/bin/pint --test
 ```
 
-Pengujian memakai SQLite `:memory:` sehingga tidak mengubah database aplikasi. Cakupan meliputi autentikasi, validasi registrasi, rate limiting, pemisahan akses, penolakan eskalasi role, perubahan role, pencarian, pagination, dan seeder.
+Pengujian memakai SQLite `:memory:` sehingga tidak mengubah database aplikasi. Cakupan meliputi autentikasi, penutupan pendaftaran publik, pembuatan akun khusus admin beserta validasinya, rate limiting, pemisahan akses, penolakan eskalasi role, perubahan role, pencarian, pagination, dan seeder.
 
 Referensi: [autentikasi Laravel](https://laravel.com/docs/12.x/authentication), [middleware](https://laravel.com/docs/12.x/middleware).
 

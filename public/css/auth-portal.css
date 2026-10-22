@@ -1,5 +1,5 @@
 :root {
-    /* ShopAds identity: MyAds red and supporting tones. */
+    /* Base interface tokens; final palette is defined in white-theme.css. */
     --brand-primary: #e1000c;
     --brand-dark: #b0000a;
     --brand-deep: #89000a;
@@ -7557,7 +7557,7 @@ body.campaign-map-open {
   flex-shrink: 0;
 }
 
-/* ShopAds presentation with the MyAds red palette. */
+/* Shared component presentation. */
 body {
     color: #333;
     background: var(--surface);

@@ -25,6 +25,12 @@ class RoleAccessTest extends TestCase
         $this->get('/user/dashboard')->assertOk()->assertSee('Total template')->assertSee('Total campaign');
         $this->get('/admin/dashboard')->assertForbidden();
         $this->get('/admin/users')->assertForbidden();
+        $this->get('/admin/users/create')->assertForbidden();
+        $this->post('/admin/users', [
+            'name' => 'Unauthorized User', 'username' => 'unauthorized', 'email' => 'unauthorized@example.com',
+            'password' => 'Secure123!', 'password_confirmation' => 'Secure123!',
+        ])->assertForbidden();
+        $this->assertDatabaseCount('users', 1);
         $this->patch('/admin/users/'.$user->id.'/role', ['role' => 'admin'])->assertForbidden();
         $this->assertSame('user', $user->fresh()->role);
     }

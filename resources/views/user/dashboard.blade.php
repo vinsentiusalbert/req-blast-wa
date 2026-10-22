@@ -3,6 +3,11 @@
 @section('content')
 <div class="page-heading"><div><span class="eyebrow">DASHBOARD USER</span><h1>Halo, {{ auth()->user()->name }}<span class="accent-dot">.</span></h1><p class="muted">Pantau jumlah template dan campaign WhatsApp Anda berdasarkan statusnya.</p></div><span class="badge user"><span class="status-dot"></span> Akun aktif</span></div>
 
+<section class="account-banner dashboard-welcome">
+    <div><span class="banner-eyebrow">MULAI PERCAKAPAN</span><h2>Pesan yang baik dimulai di sini.</h2><p>Siapkan template, ajukan persetujuan, dan jangkau audiens Anda lewat campaign WhatsApp.</p></div>
+    <a class="button" href="{{ route('user.whatsapp.templates.create') }}">Buat template &rarr;</a>
+</section>
+
 <div class="stats">
     <section class="card stat-card"><h2 class="stat-heading">Total keseluruhan</h2><strong class="stat">{{ number_format($totalTemplates + $totalCampaigns, 0, ',', '.') }}</strong><small>Template dan campaign Anda</small></section>
     <section class="card stat-card"><h2 class="stat-heading">Total template</h2><strong class="stat">{{ number_format($totalTemplates, 0, ',', '.') }}</strong><small>Semua status persetujuan</small></section>

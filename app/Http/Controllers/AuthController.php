@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -37,33 +35,6 @@ class AuthController extends Controller
         }
 
         RateLimiter::clear($key);
-        $request->session()->regenerate();
-        $request->session()->put('show_wa_request_intro', true);
-
-        return redirect()->route('dashboard');
-    }
-
-    public function register(Request $request): RedirectResponse
-    {
-        if (is_string($request->input('username'))) {
-            $request->merge(['username' => Str::lower(trim($request->input('username')))]);
-        }
-        if (is_string($request->input('email'))) {
-            $request->merge(['email' => Str::lower(trim($request->input('email')))]);
-        }
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'min:3', 'max:50', 'regex:/\A[a-z0-9][a-z0-9._-]*\z/', 'unique:users,username'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
-        ], [
-            'username.regex' => 'Username harus diawali huruf atau angka, dan hanya boleh berisi huruf, angka, titik, garis bawah, atau tanda hubung.',
-            'username.unique' => 'Username sudah digunakan. Silakan pilih username lain.',
-        ]);
-
-        // Role comes from the database default, never from public registration input.
-        $user = User::create($data);
-        Auth::login($user);
         $request->session()->regenerate();
         $request->session()->put('show_wa_request_intro', true);
 

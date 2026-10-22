@@ -15,8 +15,6 @@ Route::redirect('/', '/dashboard');
 Route::middleware('guest')->group(function () {
     Route::view('/login', 'auth.login')->name('login');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:20,1');
-    Route::view('/register', 'auth.register')->name('register');
-    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:5,1');
 });
 
 Route::middleware('auth')->group(function () {
@@ -29,6 +27,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/whatsapp/reports/{broadcast}', [WhatsAppReportController::class, 'show'])->name('whatsapp.reports.show');
         Route::get('/whatsapp/reports/{broadcast}/export', [WhatsAppReportController::class, 'export'])->name('whatsapp.reports.export');
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::patch('/users/{user}/role', [UserController::class, 'updateRole'])->name('users.role');
         Route::prefix('whatsapp/broadcasts')->name('whatsapp.broadcasts.')->group(function () {
             Route::get('/', [BroadcastReviewController::class, 'index'])->name('index');
