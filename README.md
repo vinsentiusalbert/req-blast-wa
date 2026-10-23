@@ -23,7 +23,17 @@ Credits use unique references to prevent duplicate credits from repeated form su
 
 ## Templates and the visual editor
 
-Create a template with a name, language, optional text/image header, and message body. Names start with a lowercase letter and contain lowercase letters, numbers, or underscores. Header images support JPG, PNG, and WebP under 1 MB. Images are stored privately and served through ownership-checked routes; `storage:link` is not required.
+Create a template with a name, language, optional text/image header, and message body. Names start with a lowercase letter and contain lowercase letters, numbers, or underscores. Header images support JPG, PNG, and WebP under 1 MB. New images are stored on the public disk (`storage/app/public`) and accessible without login through `/storage/` after `php artisan storage:link`. Upload only images intended to be public. Ownership checks still protect template management and preview routes; previews can also read older private images during migration.
+
+To enable public images on the server, deploy this version and run from the Laravel project directory:
+
+```sh
+php artisan whatsapp:publish-template-images
+php artisan storage:link
+php artisan optimize:clear
+```
+
+The first command copies database-referenced images from `storage/app/private` to `storage/app/public` using the same paths, preserves private originals, and reports missing files. It is safe to rerun. Set the server's `APP_URL=https://wa-ln.myads-tracers.com` and the Python worker's `LARAVEL_PUBLIC_STORAGE_URL=https://wa-ln.myads-tracers.com/storage`. A database path `whatsapp-templates/2/photo.png` must open at `https://wa-ln.myads-tracers.com/storage/whatsapp-templates/2/photo.png` without logging in. If the link already exists, verify that `public/storage` points to `storage/app/public`. For HTTP 403, check the site's document root points to Laravel's `public` directory, its web server can follow this storage link, and the web server account can traverse/read the image directories/files. Do not expose `storage/app/private`, the project root, or `.env`.
 
 Text headers are saved as `*Header text*` for WhatsApp bold formatting. The editor accepts plain text, the preview displays it in bold, and resaving an already formatted header does not add duplicate markers. Header variables are personalized inside the markers, for example `*Hello {{name}}*` becomes `*Hello Alex*`. The 60-character header limit applies to the content, excluding the two formatting markers.
 

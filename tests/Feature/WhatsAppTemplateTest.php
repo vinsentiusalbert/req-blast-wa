@@ -106,6 +106,7 @@ class WhatsAppTemplateTest extends TestCase
     public function test_users_cannot_read_update_or_fetch_another_users_template_asset(): void
     {
         Storage::fake('local');
+        Storage::fake('public');
         $owner = User::factory()->create();
         $this->actingAs($owner)->post(route('user.whatsapp.templates.store'), $this->payload([
             'header_type' => 'IMAGE', 'asset' => UploadedFile::fake()->image('header.png'),
@@ -119,16 +120,18 @@ class WhatsAppTemplateTest extends TestCase
         $this->get(route('user.whatsapp.templates.index'))->assertOk()->assertDontSee($template->name);
     }
 
-    public function test_image_upload_replacement_and_header_switch_clean_up_private_files(): void
+    public function test_image_upload_replacement_and_header_switch_clean_up_public_files(): void
     {
         Storage::fake('local');
+        Storage::fake('public');
         $user = User::factory()->create();
         $this->actingAs($user)->post(route('user.whatsapp.templates.store'), $this->payload([
             'header_type' => 'IMAGE', 'asset' => UploadedFile::fake()->image('header.png'),
         ]))->assertSessionHasNoErrors();
         $template = $user->whatsappTemplates()->sole();
         $oldPath = $template->asset_path;
-        Storage::disk('local')->assertExists($oldPath);
+        Storage::disk('public')->assertExists($oldPath);
+        Storage::disk('local')->assertMissing($oldPath);
         $this->get(route('user.whatsapp.templates.asset', $template))->assertOk()->assertHeader('X-Content-Type-Options', 'nosniff');
         $this->put(route('user.whatsapp.templates.update', $template), $this->payload(['header_type' => 'IMAGE']))
             ->assertSessionHasNoErrors();
@@ -136,14 +139,14 @@ class WhatsAppTemplateTest extends TestCase
         $this->put(route('user.whatsapp.templates.update', $template), $this->payload([
             'header_type' => 'IMAGE', 'asset' => UploadedFile::fake()->image('replacement.jpg')->size(1023),
         ]))->assertSessionHasNoErrors();
-        Storage::disk('local')->assertMissing($oldPath);
+        Storage::disk('public')->assertMissing($oldPath);
         $newPath = $template->fresh()->asset_path;
-        Storage::disk('local')->assertExists($newPath);
+        Storage::disk('public')->assertExists($newPath);
         $this->put(route('user.whatsapp.templates.update', $template), $this->payload(['header_type' => 'NONE']))
             ->assertSessionHasNoErrors();
         $this->assertNull($template->fresh()->header_text);
         $this->assertNull($template->fresh()->asset_path);
-        Storage::disk('local')->assertMissing($newPath);
+        Storage::disk('public')->assertMissing($newPath);
     }
 
     public function test_invalid_template_content_is_rejected(): void

@@ -22,7 +22,7 @@ class SaveTemplate
 
         try {
             if (($data['asset'] ?? null) instanceof UploadedFile) {
-                $newPath = $data['asset']->store('whatsapp-templates/'.$user->id, 'local');
+                $newPath = $data['asset']->store('whatsapp-templates/'.$user->id, 'public');
                 if (! $newPath) {
                     throw new RuntimeException('Unable to save the template image.');
                 }
@@ -57,12 +57,13 @@ class SaveTemplate
             });
         } catch (Throwable $exception) {
             if ($newPath) {
-                Storage::disk('local')->delete($newPath);
+                Storage::disk('public')->delete($newPath);
             }
             throw $exception;
         }
 
         if ($oldPath && $oldPath !== $template->asset_path) {
+            Storage::disk('public')->delete($oldPath);
             Storage::disk('local')->delete($oldPath);
         }
 

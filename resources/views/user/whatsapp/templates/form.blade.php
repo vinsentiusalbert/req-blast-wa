@@ -21,6 +21,7 @@
                 <label for="template-asset">Header image</label>
                 <div class="template-builder-upload wa-upload"><span class="wa-upload-icon" aria-hidden="true">↑</span><strong>Upload template image</strong><span>JPG, PNG, or WebP. Under 1 MB.</span><input type="file" id="template-asset" name="asset" accept="image/jpeg,image/png,image/webp" data-existing-image="{{ $template->asset_path ? route('user.whatsapp.templates.asset', $template) : '' }}" @disabled(old('header_type', $template->header_type) !== 'IMAGE')><small data-asset-label>{{ $template->asset_path ? 'Image saved. Choose a file to replace it.' : 'No image selected.' }}</small></div>
                 <p class="error-text" data-asset-error role="alert" hidden></p>
+                <p class="field-hint">Uploaded header images are available through a public URL. Avoid uploading confidential images.</p>
                 @if($errors->any())<small>If you selected a file earlier, select the image again before saving.</small>@endif
             </div>
             @include('user.whatsapp.templates.partials.body-editor')

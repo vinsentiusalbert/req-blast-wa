@@ -119,9 +119,10 @@ class WhatsAppApprovalTest extends TestCase
         ])->assertSessionHasNoErrors();
     }
 
-    public function test_user_cannot_review_and_admin_can_access_private_review_image(): void
+    public function test_user_cannot_review_and_admin_can_access_review_image(): void
     {
         Storage::fake('local');
+        Storage::fake('public');
         $user = User::factory()->create();
         $this->actingAs($user)->post(route('user.whatsapp.templates.store'), $this->payload([
             'header_type' => 'IMAGE', 'asset' => UploadedFile::fake()->image('review.png'),

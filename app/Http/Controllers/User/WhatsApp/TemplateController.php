@@ -62,9 +62,11 @@ class TemplateController extends Controller
     public function asset(WhatsappTemplate $template): StreamedResponse
     {
         Gate::authorize('view', $template);
-        abort_unless($template->asset_path && Storage::disk('local')->exists($template->asset_path), 404);
+        abort_unless($template->asset_path, 404);
+        $disk = Storage::disk('public')->exists($template->asset_path) ? 'public' : 'local';
+        abort_unless(Storage::disk($disk)->exists($template->asset_path), 404);
 
-        return Storage::disk('local')->response($template->asset_path, null, [
+        return Storage::disk($disk)->response($template->asset_path, null, [
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);
