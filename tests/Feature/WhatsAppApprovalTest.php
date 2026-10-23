@@ -19,7 +19,7 @@ class WhatsAppApprovalTest extends TestCase
     {
         return array_replace([
             'name' => 'promo_review', 'language' => 'id', 'display_name' => '',
-            'header_type' => 'NONE', 'body' => 'Halo pelanggan!', 'buttons' => [],
+            'header_type' => 'NONE', 'body' => 'Hello pelanggan!', 'buttons' => [],
         ], $overrides);
     }
 
@@ -53,9 +53,9 @@ class WhatsAppApprovalTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN]);
         $template = $this->submit($user);
         $this->actingAs($admin)->get(route('admin.whatsapp.templates.index'))->assertOk()->assertSee($template->name);
-        $this->get(route('admin.whatsapp.templates.show', $template))->assertOk()->assertSee('Setujui Template');
+        $this->get(route('admin.whatsapp.templates.show', $template))->assertOk()->assertSee('Approve Template');
         $this->patch(route('admin.whatsapp.templates.review', $template), [
-            'decision' => 'approved', 'revision' => 1, 'review_note' => 'Pesan sesuai.',
+            'decision' => 'approved', 'revision' => 1, 'review_note' => 'Message is suitable.',
         ])->assertSessionHasNoErrors();
         $this->assertTrue($template->fresh()->isApproved());
         $this->assertSame($admin->id, $template->fresh()->reviewed_by);
@@ -77,14 +77,14 @@ class WhatsAppApprovalTest extends TestCase
             'decision' => 'rejected', 'revision' => 1,
         ])->assertSessionHasErrors('review_note');
         $this->patch(route('admin.whatsapp.templates.review', $template), [
-            'decision' => 'rejected', 'revision' => 1, 'review_note' => 'Perjelas periode promo.',
+            'decision' => 'rejected', 'revision' => 1, 'review_note' => 'Clarify the promotion dates.',
         ])->assertSessionHasNoErrors();
         $this->assertSame(WhatsappTemplate::REJECTED, $template->fresh()->approval_status);
-        $this->actingAs($user)->get(route('user.whatsapp.templates.show', $template))->assertOk()->assertSee('Perjelas periode promo.');
+        $this->actingAs($user)->get(route('user.whatsapp.templates.show', $template))->assertOk()->assertSee('Clarify the promotion dates.');
         $this->post(route('user.whatsapp.broadcasts.store'), [
             'name' => 'Blocked', 'whatsapp_template_id' => $template->id, 'recipients' => '6281234567890',
         ])->assertSessionHasErrors('whatsapp_template_id');
-        $this->put(route('user.whatsapp.templates.update', $template), $this->payload(['body' => 'Promo berlaku 1–7 Oktober.']))
+        $this->put(route('user.whatsapp.templates.update', $template), $this->payload(['body' => 'Offer valid October 1–7.']))
             ->assertSessionHasNoErrors();
         $this->assertSame(WhatsappTemplate::PENDING, $template->fresh()->approval_status);
         $this->assertSame(2, $template->fresh()->revision);
@@ -103,11 +103,11 @@ class WhatsAppApprovalTest extends TestCase
             'name' => 'Draft', 'whatsapp_template_id' => $template->id, 'recipients' => '6281234567890',
         ])->assertSessionHasNoErrors();
         $broadcast = $user->whatsappBroadcasts()->sole();
-        $this->put(route('user.whatsapp.templates.update', $template), $this->payload(['body' => 'Isi baru']))
+        $this->put(route('user.whatsapp.templates.update', $template), $this->payload(['body' => 'New content']))
             ->assertSessionHasNoErrors();
         $this->assertSame(WhatsappTemplate::PENDING, $template->fresh()->approval_status);
         $this->assertNull($template->fresh()->reviewed_at);
-        $this->get(route('user.whatsapp.broadcasts.show', $broadcast))->assertOk()->assertSee('Approval terblokir');
+        $this->get(route('user.whatsapp.broadcasts.show', $broadcast))->assertOk()->assertSee('Approval blocked');
         $this->put(route('user.whatsapp.broadcasts.update', $broadcast), [
             'name' => 'Attempt', 'whatsapp_template_id' => $template->id, 'recipients' => '6281234567890',
         ])->assertSessionHasErrors('whatsapp_template_id');

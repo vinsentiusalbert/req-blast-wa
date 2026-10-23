@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>@include('partials.head')</head>
 <body>
-    <a class="skip-link" href="#main-content">Lewati ke konten</a>
+    <a class="skip-link" href="#main-content">Skip to content</a>
     @yield('content')
 </body>
 </html>

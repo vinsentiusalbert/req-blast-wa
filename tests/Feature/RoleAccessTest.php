@@ -14,15 +14,15 @@ class RoleAccessTest extends TestCase
     {
         $this->actingAs(User::factory()->create(['role' => 'admin']));
         $this->get('/dashboard')->assertRedirect('/admin/dashboard');
-        $this->get('/admin/dashboard')->assertOk()->assertSee('Pengguna terbaru');
-        $this->get('/admin/users')->assertOk()->assertSee('Akun Anda sendiri');
+        $this->get('/admin/dashboard')->assertOk()->assertSee('Recent users');
+        $this->get('/admin/users')->assertOk()->assertSee('Your own account');
     }
 
     public function test_user_cannot_read_or_modify_admin_resources(): void
     {
         $user = User::factory()->create();
         $this->actingAs($user);
-        $this->get('/user/dashboard')->assertOk()->assertSee('Total template')->assertSee('Total campaign');
+        $this->get('/user/dashboard')->assertOk()->assertSee('Total templates')->assertSee('Total campaigns');
         $this->get('/admin/dashboard')->assertForbidden();
         $this->get('/admin/users')->assertForbidden();
         $this->get('/admin/users/create')->assertForbidden();
@@ -86,8 +86,8 @@ class RoleAccessTest extends TestCase
         $match = User::factory()->create(['name' => 'Unique Member', 'email' => 'unique@example.com']);
         $this->actingAs($admin)->get('/admin/users?search=unique@example.com')
             ->assertOk()->assertSee($match->name)->assertDontSee($admin->email);
-        $this->get('/admin/users?page=2')->assertOk()->assertSee('Sebelumnya');
-        $this->get('/admin/users?search=nonexistent')->assertOk()->assertSee('Tidak ada pengguna');
+        $this->get('/admin/users?page=2')->assertOk()->assertSee('Previous');
+        $this->get('/admin/users?search=nonexistent')->assertOk()->assertSee('No users');
     }
 
     public function test_demo_seeder_is_repeatable_without_resetting_accounts(): void

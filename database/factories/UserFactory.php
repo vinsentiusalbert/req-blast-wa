@@ -43,4 +43,9 @@ class UserFactory extends Factory
             'email_verified_at' => null,
         ]);
     }
+
+    public function funded(int $amount = 1_000_000): static
+    {
+        return $this->state(fn () => ['balance' => $amount]);
+    }
 }

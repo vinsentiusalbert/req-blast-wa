@@ -15,9 +15,9 @@ class ApprovedRecipientsTest extends TestCase
 
     private function campaign(array $records = [])
     {
-        $owner = User::factory()->create();
+        $owner = User::factory()->funded()->create();
         $template = $owner->whatsappTemplates()->create([
-            'name' => 'promo', 'display_name' => '', 'language' => 'id', 'header_type' => 'NONE', 'body' => 'Halo',
+            'name' => 'promo', 'display_name' => '', 'language' => 'id', 'header_type' => 'NONE', 'body' => 'Hello',
         ]);
         $template->forceFill(['approval_status' => WhatsappTemplate::APPROVED])->save();
 
@@ -32,7 +32,7 @@ class ApprovedRecipientsTest extends TestCase
     {
         $records = array_map(fn ($i) => [
             'msisdn' => '628'.str_pad((string) $i, 9, '0', STR_PAD_LEFT),
-            'nama' => 'Nama '.$i, 'kode' => '001', 'produk' => 'Tas',
+            'name' => 'Name '.$i, 'code' => '001', 'product' => 'Bag',
         ], range(1, 205));
         $broadcast = $this->campaign($records);
         $this->assertDatabaseCount('whatsapp_broadcast_recipients', 0);
@@ -41,7 +41,7 @@ class ApprovedRecipientsTest extends TestCase
         $this->patch($url, ['status' => 'approve', 'revision' => 1])->assertSessionHasNoErrors();
         $this->assertSame(205, $broadcast->approvedRecipients()->count());
         $row = $broadcast->approvedRecipients()->where('msisdn', $records[0]['msisdn'])->sole();
-        $this->assertSame(['nama' => 'Nama 1', 'kode' => '001', 'produk' => 'Tas'], $row->variables);
+        $this->assertSame(['name' => 'Name 1', 'code' => '001', 'product' => 'Bag'], $row->variables);
         $this->assertSame($broadcast->id, $row->broadcast->id);
         $this->patch($url, ['status' => 'approve', 'revision' => 1])->assertSessionHasErrors('status');
         $this->patch($url, ['status' => 'finish', 'revision' => 1])->assertSessionHasNoErrors();
@@ -78,5 +78,8 @@ class ApprovedRecipientsTest extends TestCase
             ->assertStatus(500);
         $this->assertDatabaseCount('whatsapp_broadcast_recipients', 0);
         $this->assertSame('pending', $broadcast->fresh()->status);
+        $this->assertSame(1_000_000, $broadcast->user->fresh()->balance);
+        $this->assertDatabaseCount('wallet_transactions', 0);
+        $this->assertNull($broadcast->fresh()->charged_at);
     }
 }

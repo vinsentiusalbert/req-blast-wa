@@ -28,14 +28,14 @@ class TemplateController extends Controller
 
     public function create(): View
     {
-        return view('user.whatsapp.templates.form', ['template' => new WhatsappTemplate(['language' => 'id', 'header_type' => 'NONE', 'buttons' => []])]);
+        return view('user.whatsapp.templates.form', ['template' => new WhatsappTemplate(['language' => 'en', 'header_type' => 'NONE', 'buttons' => []])]);
     }
 
     public function store(SaveTemplateRequest $request, SaveTemplate $action): RedirectResponse
     {
         $template = $action->handle($request->user(), $request->validated());
 
-        return to_route('user.whatsapp.templates.show', $template)->with('status', 'Template berhasil diajukan. Tunggu persetujuan admin sebelum digunakan untuk broadcast.');
+        return to_route('user.whatsapp.templates.show', $template)->with('status', 'The template was submitted successfully. Wait for administrator approval before using it in a broadcast.');
     }
 
     public function show(WhatsappTemplate $template): View
@@ -56,7 +56,7 @@ class TemplateController extends Controller
     {
         $action->handle($request->user(), $request->validated(), $template);
 
-        return to_route('user.whatsapp.templates.show', $template)->with('status', 'Template diperbarui dan diajukan ulang. Persetujuan admin diperlukan kembali.');
+        return to_route('user.whatsapp.templates.show', $template)->with('status', 'The template was updated and resubmitted. Administrator approval is required again.');
     }
 
     public function asset(WhatsappTemplate $template): StreamedResponse

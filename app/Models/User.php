@@ -15,11 +15,17 @@ class User extends Authenticatable
 
     public const ROLE_USER = 'user';
 
+    public const MAX_BALANCE = 1_000_000_000_000;
+
+    public const MAX_BROADCAST_RATE = 1_000_000_000;
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
     protected $attributes = [
         'role' => self::ROLE_USER,
+        'balance' => 0,
+        'broadcast_rate' => 500,
     ];
 
     /**
@@ -54,6 +60,11 @@ class User extends Authenticatable
         return $this->hasMany(WhatsappTemplate::class);
     }
 
+    public function walletTransactions(): HasMany
+    {
+        return $this->hasMany(WalletTransaction::class);
+    }
+
     public function whatsappBroadcasts(): HasMany
     {
         return $this->hasMany(WhatsappBroadcast::class);
@@ -67,6 +78,8 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
+            'balance' => 'integer',
+            'broadcast_rate' => 'integer',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];

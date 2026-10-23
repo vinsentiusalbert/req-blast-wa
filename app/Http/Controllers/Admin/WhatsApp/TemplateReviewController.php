@@ -46,8 +46,8 @@ class TemplateReviewController extends Controller
     {
         $action->handle($request->user(), $template, $request->validated());
         $message = $request->validated('decision') === WhatsappTemplate::APPROVED
-            ? 'Template disetujui dan sekarang dapat digunakan oleh pemiliknya untuk broadcast.'
-            : 'Template ditolak. User dapat memperbaiki dan mengajukannya kembali.';
+            ? 'The template is approved and its owner can now use it in broadcasts.'
+            : 'The template was rejected. The user can revise it and resubmit.';
 
         return to_route('admin.whatsapp.templates.show', $template)->with('status', $message);
     }

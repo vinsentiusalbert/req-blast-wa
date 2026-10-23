@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>WhatsApp editor browser tests</title>
+<style>[data-message-editor] { white-space: pre-wrap; }</style>
+<form id="whatsapp-template-form">
+    <div data-message-toolbar hidden>
+        <button type="button" data-format="bold">Bold</button><button type="button" data-format="italic">Italic</button>
+        <button type="button" data-format="strike">Strike</button><button type="button" data-format="code">Code</button>
+        <button type="button" data-format="bullet">Bullet</button><button type="button" data-format="number">Number</button>
+        <button type="button" data-format="clear">Clear</button>
+        <button type="button" data-emoji-toggle>Emoji</button><button type="button" data-insert-variable>Variable</button>
+    </div>
+    <div data-emoji-picker hidden><button type="button" data-emoji="🎉">Celebrate</button></div>
+    <textarea id="template-body" name="body" maxlength="550" required>*Hello* 😊 {{name}}</textarea>
+    <div data-message-editor contenteditable="true" hidden></div>
+    <span data-body-count></span><p data-body-error hidden></p>
+</form>
+<div data-preview-body></div>
+<script src="../../public/js/whatsapp-text.js"></script>
+<script src="../../public/js/whatsapp-preview.js"></script>
+<script src="../../public/js/whatsapp-editor.js"></script>
+<script>
+    const results = [];
+    const check = (name, run) => {
+        try { run(); results.push('PASS: ' + name); }
+        catch (error) { results.push('FAIL: ' + name + ' — ' + error.message); }
+    };
+    const equal = (actual, expected) => { if (actual !== expected) throw Error(JSON.stringify({actual, expected})); };
+    const editor = document.querySelector('[data-message-editor]');
+    const body = document.querySelector('#template-body');
+    const set = text => { editor.innerHTML = WhatsAppText.toHtml(text); editor.dispatchEvent(new Event('input')); };
+    const selectAll = () => {
+        editor.focus(); const range = document.createRange(); range.selectNodeContents(editor);
+        getSelection().removeAllRanges(); getSelection().addRange(range);
+        document.dispatchEvent(new Event('selectionchange'));
+    };
+    const end = () => { selectAll(); getSelection().collapseToEnd(); document.dispatchEvent(new Event('selectionchange')); };
+    const click = selector => document.querySelector(selector).click();
+    check('loads saved formatting, emoji and CSV variables', () => {
+        equal(editor.querySelector('strong').textContent, 'Hello');
+        equal(body.value, '*Hello* 😊 {{name}}'); equal(body.hidden, true); equal(body.required, false);
+    });
+    check('round trips supported WhatsApp formatting and blank lines', () => {
+        const samples = ['Hello 😊 {{name}}', '*bold* _miring_ ~strike~ ```code```', '```line 1\nbaris 2```', '```\nbaris 1\nbaris 2\n```', '*_gabungan_*', 'one\n\ndua\n', '- one\n- two\n\nAkhir', '3. one\n4. two', '{{customer_name}}', '<img src=x onerror=alert(1)>'];
+        samples.forEach(sample => { set(sample); equal(body.value, sample); });
+    });
+    check('bold and italic buttons use WhatsApp markers', () => {
+        set('Promo'); selectAll(); click('[data-format="bold"]'); equal(body.value, '*Promo*');
+        selectAll(); click('[data-format="italic"]'); equal(body.value, '*_Promo_*');
+    });
+    check('strike and monospace buttons serialize correctly', () => {
+        set('Old'); selectAll(); click('[data-format="strike"]'); equal(body.value, '~Old~');
+        set('Code'); selectAll(); click('[data-format="code"]'); equal(body.value, '```Code```');
+    });
+    check('list buttons preserve WhatsApp list syntax', () => {
+        set('One\nDua'); selectAll(); click('[data-format="bullet"]'); equal(body.value, '- One\n- Two');
+        set('One\nDua'); selectAll(); click('[data-format="number"]'); equal(body.value, '1. One\n2. Two');
+    });
+    check('formatting multiple lines and clearing existing formatting', () => {
+        set('One\nDua'); selectAll(); click('[data-format="bold"]');
+        const parsed = document.createElement('div'); parsed.innerHTML = WhatsAppText.toHtml(body.value);
+        equal(parsed.textContent, 'OneTwo'); equal(parsed.querySelectorAll('strong').length, 2);
+        set('*Promo*'); selectAll(); click('[data-format="clear"]'); equal(body.value, 'Promo');
+        set('```Code```'); selectAll(); click('[data-format="clear"]'); equal(body.value, 'Code');
+    });
+    check('emoji and variable insertion restore the caret', () => {
+        set('Hello '); end(); click('[data-emoji-toggle]'); click('[data-emoji]');
+        equal(body.value, 'Hello 🎉'); equal(document.querySelector('[data-emoji-picker]').hidden, true);
+        click('[data-insert-variable]'); equal(body.value, 'Hello 🎉{{name}}');
+    });
+    check('HTML paste is handled only as literal plain text', () => {
+        set(''); end();
+        const transfer = new DataTransfer(); transfer.setData('text/plain', '<img src=x onerror=alert(1)> 😊'); transfer.setData('text/html', '<img src=x onerror=alert(1)>');
+        editor.dispatchEvent(new ClipboardEvent('paste', {clipboardData: transfer, bubbles: true, cancelable: true}));
+        equal(editor.querySelector('img'), null); equal(body.value, '<img src=x onerror=alert(1)> 😊');
+    });
+    check('preview formats text while escaping hostile HTML', () => {
+        WhatsAppPreview.render({body: '*Hello* 😊 <script>window.hacked=true;<\/script>'});
+        const preview = document.querySelector('[data-preview-body]');
+        equal(preview.querySelector('strong').textContent, 'Hello'); equal(preview.querySelector('script'), null); equal(window.hacked, undefined);
+    });
+    check('Unicode character limit and empty body block submission', () => {
+        const submit = () => { const event = new Event('submit', {bubbles: true, cancelable: true}); document.querySelector('form').dispatchEvent(event); return event.defaultPrevented; };
+        set('😊'.repeat(550)); equal(submit(), false); equal(document.querySelector('[data-body-count]').textContent, '550/550 characters');
+        set('😊'.repeat(551)); equal(submit(), true); equal(editor.getAttribute('aria-invalid'), 'true');
+        set(''); equal(submit(), true); equal(document.querySelector('[data-body-error]').textContent, 'The message body is required.');
+    });
+    document.body.dataset.testStatus = results.some(result => result.startsWith('FAIL')) ? 'failed' : 'passed';
+    const report = document.createElement('pre'); report.id = 'test-results'; report.textContent = results.join('\n'); document.body.append(report);
+</script></html>

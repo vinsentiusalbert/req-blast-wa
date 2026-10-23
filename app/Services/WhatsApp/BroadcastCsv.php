@@ -13,16 +13,16 @@ class BroadcastCsv
         try {
             $headers = fgetcsv($stream, 0, ',', '"', '');
             if (! $headers) {
-                $this->fail('CSV kosong.');
+                $this->fail('The CSV is empty.');
             }
             $headers = array_map(fn ($value) => trim((string) $value), $headers);
             $headers[0] = preg_replace('/^\xEF\xBB\xBF/', '', $headers[0]);
             if ($headers[0] !== 'msisdn' || count(array_unique($headers)) !== count($headers)) {
-                $this->fail('Kolom pertama wajib msisdn dan nama kolom tidak boleh duplikat.');
+                $this->fail('The first column must be msisdn and column names must be unique.');
             }
             foreach ($headers as $header) {
                 if ($header === '' || ! mb_check_encoding($header, 'UTF-8') || preg_match('/[{}\r\n]/', $header)) {
-                    $this->fail('Nama kolom wajib diisi, menggunakan UTF-8, dan tidak mengandung kurung kurawal.');
+                    $this->fail('Column names are required, must use UTF-8, and must not contain braces.');
                 }
             }
             $rows = [];
@@ -34,11 +34,11 @@ class BroadcastCsv
                     continue;
                 }
                 if (count($values) !== count($headers)) {
-                    $this->fail("Record {$line}: jumlah kolom berbeda dari header.");
+                    $this->fail("Record {$line}: the column count does not match the header.");
                 }
                 foreach ($values as $value) {
                     if (! mb_check_encoding($value, 'UTF-8')) {
-                        $this->fail("Record {$line}: simpan file sebagai CSV UTF-8.");
+                        $this->fail("Record {$line}: save the file as UTF-8 CSV.");
                     }
                 }
                 try {
@@ -47,18 +47,18 @@ class BroadcastCsv
                     $this->fail("Record {$line}: ".$e->getMessage());
                 }
                 if (count($numbers) !== 1 || preg_match('/[,;\r\n]/', $values[0])) {
-                    $this->fail("Record {$line}: msisdn harus berisi satu nomor.");
+                    $this->fail("Record {$line}: msisdn must contain a single number.");
                 }
                 $values[0] = $numbers[0];
                 if (isset($seen[$values[0]])) {
-                    $this->fail("Record {$line}: nomor duplikat. Gunakan satu record per nomor.");
+                    $this->fail("Record {$line}: duplicate number. Use one record per number.");
                 }
                 $seen[$values[0]] = true;
                 $rows[] = array_combine($headers, $values);
 
             }
             if (! $rows) {
-                $this->fail('CSV harus memiliki minimal satu record penerima.');
+                $this->fail('The CSV must contain at least one recipient record.');
             }
 
             return $rows;
@@ -74,7 +74,7 @@ class BroadcastCsv
             $key = trim($key);
             foreach ($rows as $index => $row) {
                 if (! array_key_exists($key, $row) || trim($row[$key]) === '') {
-                    $this->fail('Variabel {{'.$key.'}} belum diisi pada record '.($index + 1).'. Nama kolom harus sama dengan variabel template.');
+                    $this->fail('Variable {{'.$key.'}} has no value in record '.($index + 1).'. Column names must match the template variables.');
                 }
             }
         }

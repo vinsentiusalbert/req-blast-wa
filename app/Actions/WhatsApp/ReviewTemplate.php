@@ -15,7 +15,7 @@ class ReviewTemplate
             $current = WhatsappTemplate::query()->lockForUpdate()->findOrFail($template->id);
             if ($current->revision !== (int) $data['revision'] || $current->approval_status !== WhatsappTemplate::PENDING) {
                 throw ValidationException::withMessages([
-                    'decision' => 'Template telah berubah atau sudah ditinjau. Muat ulang halaman sebelum memberikan keputusan.',
+                    'decision' => 'The template has changed or has already been reviewed. Reload the page before making a decision.',
                 ]);
             }
 

@@ -16,8 +16,8 @@ class RequestIntroTest extends TestCase
         $this->post(route('login'), ['username' => $user->username, 'password' => 'Password123!'])
             ->assertRedirect(route('dashboard'))->assertSessionHas('show_wa_request_intro', true);
         $this->get(route('dashboard'))->assertRedirect(route('user.dashboard'));
-        $this->get(route('user.dashboard'))->assertOk()->assertSee('Request WA Long Number')
-            ->assertSee('data-auto-open="true"', false)->assertSee('Panduan request');
+        $this->get(route('user.dashboard'))->assertOk()->assertSee('WhatsApp Long Number Requests')
+            ->assertSee('data-auto-open="true"', false)->assertSee('Submission guide');
         $this->get(route('user.dashboard'))->assertOk()->assertSee('data-auto-open="false"', false);
         $this->post(route('logout'));
         $this->post(route('login'), ['username' => $user->username, 'password' => 'wrong'])
@@ -29,7 +29,7 @@ class RequestIntroTest extends TestCase
         $admin = User::factory()->create(['role' => User::ROLE_ADMIN, 'password' => 'Password123!']);
         $this->post(route('login'), ['username' => $admin->username, 'password' => 'Password123!']);
         $this->get(route('admin.dashboard'))->assertOk()->assertSee('data-auto-open="true"', false)
-            ->assertSee('Sebagai admin')->assertSee('Campaign menunggu review')
+            ->assertSee('As an administrator')->assertSee('Campaigns awaiting review')
             ->assertSee(route('admin.whatsapp.broadcasts.index', ['status' => 'pending']));
     }
 }

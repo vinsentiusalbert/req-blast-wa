@@ -12,7 +12,7 @@ class WhatsAppReportTest extends TestCase
 
     private function campaign(User $user, string $name)
     {
-        $template = $user->whatsappTemplates()->create(['name' => 'promo', 'display_name' => '', 'language' => 'id', 'header_type' => 'NONE', 'body' => 'Halo']);
+        $template = $user->whatsappTemplates()->create(['name' => 'promo', 'display_name' => '', 'language' => 'id', 'header_type' => 'NONE', 'body' => 'Hello']);
         $broadcast = $user->whatsappBroadcasts()->create(['name' => $name, 'whatsapp_template_id' => $template->id, 'recipients' => ['6281234567890', '6281234567891'], 'recipient_count' => 2]);
         $broadcast->approvedRecipients()->create(['msisdn' => '6281234567890', 'variables' => []])->forceFill(['status' => 'sent', 'attempts' => 1, 'sent_at' => now()])->save();
         $broadcast->approvedRecipients()->create(['msisdn' => '6281234567891', 'variables' => []])->forceFill(['status' => 'failed', 'attempts' => 2, 'failure_reason' => '=FORMULA()', 'failed_at' => now()])->save();
@@ -69,10 +69,10 @@ class WhatsAppReportTest extends TestCase
             ->assertOk()->assertViewHas('total', 1)->assertSee('22/10/2026');
         $this->get(route('user.whatsapp.reports.index', ['from' => '2026-10-21', 'to' => '2026-10-21']))
             ->assertOk()->assertViewHas('total', 0);
-        $this->get(route('user.whatsapp.reports.show', $broadcast))->assertOk()->assertSee('22 Oct 2026, 01:30:00')->assertSee('WIB (UTC+7)');
+        $this->get(route('user.whatsapp.reports.show', $broadcast))->assertOk()->assertSee('22 Oct 2026, 01:30:00')->assertSee('Time in UTC+7');
         $csv = $this->get(route('user.whatsapp.reports.export', $broadcast))->streamedContent();
         $this->assertStringContainsString('2026-10-22 01:30:00', $csv);
-        $this->assertStringContainsString('Terkirim (WIB)', $csv);
+        $this->assertStringContainsString('Sent (UTC+7)', $csv);
     }
 
     public function test_sent_recipients_hide_old_failures_in_page_and_downloads(): void
@@ -81,7 +81,7 @@ class WhatsAppReportTest extends TestCase
         $broadcast = $this->campaign($owner, 'Successful retry');
         $broadcast->approvedRecipients()->update(['status' => 'sent', 'sent_at' => now(), 'failed_at' => now()->subHour(), 'failure_reason' => 'OLD FAILURE']);
         $this->actingAs($owner)->get(route('user.whatsapp.reports.show', $broadcast))
-            ->assertOk()->assertSee('Pesan terkirim')->assertDontSee('OLD FAILURE')->assertDontSee('report-stat--failed', false);
+            ->assertOk()->assertSee('Message sent')->assertDontSee('OLD FAILURE')->assertDontSee('report-stat--failed', false);
         $csv = $this->get(route('user.whatsapp.reports.export', $broadcast))->assertOk()->streamedContent();
         $this->assertStringNotContainsString('OLD FAILURE', $csv);
         $response = $this->get(route('user.whatsapp.reports.export', ['broadcast' => $broadcast, 'format' => 'xlsx', 'msisdn' => '7890']))

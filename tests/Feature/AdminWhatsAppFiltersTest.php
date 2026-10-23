@@ -18,7 +18,7 @@ class AdminWhatsAppFiltersTest extends TestCase
             foreach (['pending', 'approved', 'rejected'] as $status) {
                 $template = $owner->whatsappTemplates()->create([
                     'name' => 'template_'.$owner->id.'_'.$status, 'display_name' => '',
-                    'language' => 'id', 'header_type' => 'NONE', 'body' => 'Halo',
+                    'language' => 'id', 'header_type' => 'NONE', 'body' => 'Hello',
                 ]);
                 $template->forceFill(['approval_status' => $status])->save();
             }

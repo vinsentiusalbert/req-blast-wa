@@ -9,6 +9,13 @@ use Illuminate\Validation\Rule;
 
 class SaveTemplateRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        if ($this->input('header_type') === 'TEXT' && is_string($this->input('header_text'))) {
+            $this->merge(['header_text' => WhatsappTemplate::headerContent($this->input('header_text'))]);
+        }
+    }
+
     public function authorize(): bool
     {
         $template = $this->route('template');
@@ -35,22 +42,22 @@ class SaveTemplateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'required' => ':attribute wajib diisi.',
-            'max.string' => ':attribute maksimal :max karakter.',
-            'name.regex' => 'Nama template harus diawali huruf kecil dan hanya berisi huruf kecil, angka, serta garis bawah.',
-            'name.unique' => 'Anda sudah memiliki template dengan nama ini.',
-            'asset.required' => 'Unggah gambar untuk header template.',
-            'asset.image' => 'Asset harus berupa gambar.',
-            'asset.mimes' => 'Gambar harus berformat JPG, PNG, atau WebP.',
-            'asset.max' => 'Ukuran gambar harus di bawah 1 MB.',
+            'required' => ':attribute is required.',
+            'max.string' => ':attribute may not exceed :max characters.',
+            'name.regex' => 'The template name must start with a lowercase letter and contain only lowercase letters, numbers, and underscores.',
+            'name.unique' => 'You already have a template with this name.',
+            'asset.required' => 'Upload an image for the template header.',
+            'asset.image' => 'The asset must be an image.',
+            'asset.mimes' => 'The image must be JPG, PNG, or WebP.',
+            'asset.max' => 'The image must be under 1 MB.',
         ];
     }
 
     public function attributes(): array
     {
         return [
-            'name' => 'Nama template', 'language' => 'Bahasa',
-            'header_text' => 'Teks header', 'body' => 'Isi pesan',
+            'name' => 'Template name', 'language' => 'Language',
+            'header_text' => 'Header text', 'body' => 'Message body',
         ];
     }
 }

@@ -3,7 +3,7 @@
 @endif
 @if($errors->any())
     <div class="notice error" role="alert">
-        <strong>Periksa kembali data Anda.</strong>
+        <strong>Please check your details.</strong>
         <ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
     </div>
 @endif

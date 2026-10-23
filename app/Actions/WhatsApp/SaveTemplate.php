@@ -24,7 +24,7 @@ class SaveTemplate
             if (($data['asset'] ?? null) instanceof UploadedFile) {
                 $newPath = $data['asset']->store('whatsapp-templates/'.$user->id, 'local');
                 if (! $newPath) {
-                    throw new RuntimeException('Gambar template gagal disimpan.');
+                    throw new RuntimeException('Unable to save the template image.');
                 }
             }
 
@@ -32,7 +32,7 @@ class SaveTemplate
             $attributes['footer'] = null;
             // Keep the legacy database column empty for templates without a sender name.
             $attributes['display_name'] = '';
-            $attributes['header_text'] = $data['header_type'] === 'TEXT' ? $data['header_text'] : null;
+            $attributes['header_text'] = $data['header_type'] === 'TEXT' ? WhatsappTemplate::formatHeader($data['header_text']) : null;
             $attributes['buttons'] = [];
 
             DB::transaction(function () use ($template, $attributes, $newPath, &$oldPath) {
@@ -43,7 +43,7 @@ class SaveTemplate
                 $oldPath = $current->asset_path;
                 $attributes['asset_path'] = $attributes['header_type'] === 'IMAGE' ? ($newPath ?? $oldPath) : null;
                 if ($attributes['header_type'] === 'IMAGE' && ! $attributes['asset_path']) {
-                    throw ValidationException::withMessages(['asset' => 'Unggah gambar untuk header template.']);
+                    throw ValidationException::withMessages(['asset' => 'Upload an image for the template header.']);
                 }
                 $current->fill($attributes);
                 $current->approval_status = WhatsappTemplate::PENDING;

@@ -15,13 +15,13 @@ class WhatsappTemplate extends Model
 
     public const REJECTED = 'rejected';
 
-    public const APPROVAL_LABELS = ['pending' => 'Menunggu persetujuan', 'approved' => 'Disetujui', 'rejected' => 'Ditolak'];
+    public const APPROVAL_LABELS = ['pending' => 'Awaiting approval', 'approved' => 'Approved', 'rejected' => 'Rejected'];
 
-    public const LANGUAGES = ['id' => 'Indonesia', 'en' => 'English'];
+    public const LANGUAGES = ['en' => 'English', 'id' => 'Indonesian'];
 
-    public const HEADER_TYPES = ['NONE' => 'Tanpa header', 'TEXT' => 'Teks', 'IMAGE' => 'Gambar'];
+    public const HEADER_TYPES = ['NONE' => 'No header', 'TEXT' => 'Text', 'IMAGE' => 'Image'];
 
-    public const BUTTON_TYPES = ['QUICK_REPLY' => 'Balasan cepat', 'URL' => 'Buka website', 'PHONE_NUMBER' => 'Hubungi telepon'];
+    public const BUTTON_TYPES = ['QUICK_REPLY' => 'Quick reply', 'URL' => 'Open website', 'PHONE_NUMBER' => 'Call phone number'];
 
     public const MAX_BODY_LENGTH = 550;
 
@@ -32,6 +32,16 @@ class WhatsappTemplate extends Model
     protected function casts(): array
     {
         return ['buttons' => 'array', 'revision' => 'integer', 'reviewed_at' => 'datetime'];
+    }
+
+    public static function headerContent(?string $text): string
+    {
+        return trim(trim(trim($text ?? ''), '*'));
+    }
+
+    public static function formatHeader(string $text): string
+    {
+        return '*'.self::headerContent($text).'*';
     }
 
     public function isApproved(): bool

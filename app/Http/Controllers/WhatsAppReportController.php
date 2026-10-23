@@ -12,7 +12,7 @@ use Illuminate\Validation\Rule;
 
 class WhatsAppReportController extends Controller
 {
-    public const STATUSES = ['pending' => 'Menunggu', 'sent' => 'Terkirim', 'failed' => 'Gagal'];
+    public const STATUSES = ['pending' => 'Pending', 'sent' => 'Sent', 'failed' => 'Failed'];
 
     public function index(Request $request)
     {
@@ -85,7 +85,7 @@ class WhatsAppReportController extends Controller
 
     private function exportRows($query): \Generator
     {
-        yield ['Nomor WhatsApp', 'Status', 'Percobaan', 'Terakhir dicoba (WIB)', 'Terkirim (WIB)', 'Gagal (WIB)', 'Alasan gagal'];
+        yield ['WhatsApp number', 'Status', 'Attempts', 'Last attempted (UTC+7)', 'Sent (UTC+7)', 'Failed (UTC+7)', 'Failure reason'];
         foreach ($query->lazyById(500) as $row) {
             yield [$row->msisdn, self::STATUSES[$row->status] ?? $row->status, $row->attempts,
                 $row->last_attempt_at?->timezone('Asia/Jakarta')->format('Y-m-d H:i:s'), $row->sent_at?->timezone('Asia/Jakarta')->format('Y-m-d H:i:s'),

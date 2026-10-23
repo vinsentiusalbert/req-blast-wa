@@ -19,7 +19,7 @@ class RecipientParser
             }
 
             if (! preg_match('/^62[0-9]{6,13}$/D', $number)) {
-                throw new InvalidArgumentException('Nomor penerima ke-'.($index + 1).' wajib diawali 62 dan hanya berisi angka (8?15 digit), contoh 6281234567890.');
+                throw new InvalidArgumentException('Recipient number '.($index + 1).' must start with 62 and contain digits only (8–15 digits), for example 6281234567890.');
             }
 
             $recipients[$number] = $number;
@@ -28,7 +28,7 @@ class RecipientParser
         }
 
         if ($recipients === []) {
-            throw new InvalidArgumentException('Masukkan minimal satu nomor penerima.');
+            throw new InvalidArgumentException('Enter at least one recipient number.');
         }
 
         return array_values($recipients);

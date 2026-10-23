@@ -39,7 +39,7 @@ class SaveBroadcastRequest extends FormRequest
             }
             $scheduled = CarbonImmutable::createFromFormat('!Y-m-d H:i', $this->input('schedule_date').' '.$this->input('schedule_time'), 'Asia/Jakarta');
             if ($scheduled->lessThan(now('Asia/Jakarta')->startOfMinute())) {
-                $validator->errors()->add('schedule_time', 'Tanggal dan jam broadcast tidak boleh sebelum waktu sekarang (WIB).');
+                $validator->errors()->add('schedule_time', 'The broadcast date and time cannot be in the past (UTC+7).');
             }
         }];
     }
@@ -47,15 +47,15 @@ class SaveBroadcastRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'schedule_date.required_with' => 'Pilih tanggal broadcast.',
-            'schedule_time.required_with' => 'Pilih jam broadcast.',
-            'schedule_date.date_format' => 'Tanggal broadcast tidak valid.',
-            'schedule_time.date_format' => 'Jam broadcast tidak valid.',
-            'name.required' => 'Nama broadcast wajib diisi.',
-            'name.max' => 'Nama broadcast maksimal 150 karakter.',
-            'whatsapp_template_id.required' => 'Pilih template terlebih dahulu.',
-            'whatsapp_template_id.exists' => 'Pilih template milik Anda yang sudah disetujui admin.',
-            'recipients.required' => 'Masukkan minimal satu nomor penerima.',
+            'schedule_date.required_with' => 'Select a broadcast date.',
+            'schedule_time.required_with' => 'Select a broadcast time.',
+            'schedule_date.date_format' => 'The broadcast date is invalid.',
+            'schedule_time.date_format' => 'The broadcast time is invalid.',
+            'name.required' => 'The broadcast name is required.',
+            'name.max' => 'The broadcast name may not exceed 150 characters.',
+            'whatsapp_template_id.required' => 'Select a template first.',
+            'whatsapp_template_id.exists' => 'Select one of your approved templates.',
+            'recipients.required' => 'Enter at least one recipient number.',
         ];
     }
 }

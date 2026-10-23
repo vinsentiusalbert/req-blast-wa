@@ -17,11 +17,11 @@ class UserDashboardTest extends TestCase
             ->assertViewHas('totalTemplates', 0)
             ->assertViewHas('totalCampaigns', 0)
             ->assertViewHas('blockedDrafts', 0)
-            ->assertSee('Menunggu persetujuan')
-            ->assertSee('Disetujui')
-            ->assertSee('Ditolak')
-            ->assertSee('Belum ada template.')
-            ->assertSee('Belum ada campaign.');
+            ->assertSee('Awaiting approval')
+            ->assertSee('Approved')
+            ->assertSee('Rejected')
+            ->assertSee('No templates yet.')
+            ->assertSee('No campaigns yet.');
     }
 
     public function test_dashboard_counts_statuses_and_excludes_other_users_data(): void
@@ -32,7 +32,7 @@ class UserDashboardTest extends TestCase
             foreach (['pending', 'approved', 'approved', 'rejected'] as $index => $status) {
                 $template = $owner->whatsappTemplates()->create([
                     'name' => 'template_'.$index, 'language' => 'id',
-                    'display_name' => '', 'header_type' => 'NONE', 'body' => 'Halo',
+                    'display_name' => '', 'header_type' => 'NONE', 'body' => 'Hello',
                 ]);
                 $template->forceFill(['approval_status' => $status])->save();
                 $owner->whatsappBroadcasts()->create([
@@ -51,7 +51,7 @@ class UserDashboardTest extends TestCase
                 'approved' => 2, 'pending' => 1, 'rejected' => 1,
             ])
             ->assertViewHas('campaignCounts', fn ($counts) => $counts->get('pending') === 4)
-            ->assertSee('Total keseluruhan')
+            ->assertSee('Overall total')
             ->assertSee('<strong class="stat">8</strong>', false)
             ->assertSee(route('user.whatsapp.templates.index'))
             ->assertSee(route('user.whatsapp.broadcasts.index'));

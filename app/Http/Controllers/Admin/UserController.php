@@ -47,13 +47,13 @@ class UserController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
         ], [
-            'username.regex' => 'Username harus diawali huruf atau angka, dan hanya boleh berisi huruf, angka, titik, garis bawah, atau tanda hubung.',
-            'username.unique' => 'Username sudah digunakan. Silakan pilih username lain.',
+            'username.regex' => 'The username must start with a letter or number and may contain only letters, numbers, periods, underscores, or hyphens.',
+            'username.unique' => 'This username is already taken. Please choose another.',
         ]);
 
         $user = User::create($data);
 
-        return redirect()->route('admin.users.index')->with('status', 'Akun '.$user->name.' berhasil dibuat.');
+        return redirect()->route('admin.users.index')->with('status', 'Account '.$user->name.' was created successfully.');
     }
 
     public function updateRole(Request $request, User $user): RedirectResponse
@@ -63,12 +63,12 @@ class UserController extends Controller
         ]);
 
         if ($request->user()->is($user)) {
-            return back()->withErrors(['role' => 'Anda tidak dapat mengubah role akun sendiri.']);
+            return back()->withErrors(['role' => 'You cannot change your own account role.']);
         }
 
         $user->role = $data['role'];
         $user->save();
 
-        return back()->with('status', 'Role '.$user->name.' berhasil diperbarui.');
+        return back()->with('status', 'Role '.$user->name.' was updated successfully.');
     }
 }

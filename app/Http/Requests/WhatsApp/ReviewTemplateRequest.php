@@ -25,8 +25,8 @@ class ReviewTemplateRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'review_note.required_if' => 'Alasan penolakan wajib diisi agar user dapat memperbaiki template.',
-            'review_note.max' => 'Catatan maksimal 1.000 karakter.',
+            'review_note.required_if' => 'Provide a rejection reason so the user can revise the template.',
+            'review_note.max' => 'Notes may not exceed 1,000 characters.',
         ];
     }
 }

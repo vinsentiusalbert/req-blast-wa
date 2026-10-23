@@ -1,4 +1,4 @@
-/* Ruang Pesan: shared visual system, loaded after page component styles. */
+/* Message Space: shared visual system, loaded after page component styles. */
 :root {
     --brand-primary: #284e43;
     --brand-dark: #1c3b32;
@@ -68,6 +68,14 @@ input[type="checkbox"], input[type="radio"] { accent-color: var(--brand-primary)
 .card { padding: 26px; }
 .table-card { padding: 0; }
 .user-create-card { max-width: 640px; }
+.wallet-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-bottom: 24px; }
+.wallet-value { display: block; margin: 12px 0; color: var(--text); font-size: clamp(24px, 3vw, 34px); letter-spacing: -.04em; overflow-wrap: anywhere; }
+.wallet-value small { font-size: 13px; letter-spacing: 0; font-weight: 400; }
+.wallet-form .button { margin-top: 22px; }
+.wallet-credit { color: #237848; font-weight: 600; }
+.wallet-ledger { min-width: 640px; }
+.wallet-ledger :is(td:nth-child(3), td:nth-child(4)) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (max-width: 720px) { .wallet-summary { grid-template-columns: minmax(0, 1fr); gap: 16px; } }
 .stats { gap: 20px; margin-bottom: 28px; }
 .stat-card { position: relative; overflow: hidden; border-top: 1px solid var(--border); }
 .stat-card::after { content: ''; position: absolute; right: 24px; top: 26px; width: 7px; height: 7px; border-radius: 50%; background: #9bb9a3; }
@@ -161,6 +169,30 @@ input::placeholder, textarea::placeholder { color: #8b958e; }
 .wa-steps .is-complete > span { background: #edf3ee; color: var(--brand-dark); }
 .wa-builder .template-builder-card, .wa-builder .template-builder-preview__card { padding: 26px; }
 .wa-builder .template-builder-editor { border-color: var(--border); border-radius: 10px; }
+.wa-builder .wa-visual-editor { position: relative; padding-bottom: 32px; }
+.wa-message-editor { min-height: 210px; max-height: 520px; overflow-y: auto; padding: 18px; color: var(--text); font-size: 14px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
+.wa-message-editor:focus { outline: none; }
+.wa-visual-editor:focus-within { border-color: #779883; box-shadow: 0 0 0 3px rgb(82 124 103 / 9%); }
+.wa-message-editor[aria-invalid="true"] { box-shadow: inset 0 0 0 1px #be123c; }
+.wa-message-editor:empty::before, .wa-message-editor:has(> div:only-child > br:only-child)::before { content: attr(data-placeholder); color: #8b958e; pointer-events: none; }
+.wa-builder .wa-visual-editor .template-builder-editor__count { right: 16px; bottom: 10px; }
+.wa-builder .wa-visual-editor .template-builder-editor__toolbar { border-bottom: 1px solid var(--border); gap: 6px; }
+.wa-builder .template-builder-editor__toolbar button[aria-pressed="true"] { color: var(--brand-dark); background: #dfece2; box-shadow: inset 0 0 0 1px #b8cdbd; }
+.wa-builder .template-builder-editor__toolbar [data-insert-variable] { padding-inline: 10px; font-size: 12px; font-family: monospace; }
+.wa-editor-divider { height: 20px; width: 1px; background: var(--border); margin-inline: 3px; }
+.wa-emoji-picker { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; padding: 12px; background: #f8faf8; border-bottom: 1px solid var(--border); }
+.wa-emoji-picker button { min-width: 0; min-height: 38px; border: 0; border-radius: 8px; background: transparent; font-size: 23px; }
+.wa-emoji-picker button:hover { background: #e4eee5; }
+.wa-editor-error { margin: 0; font-size: 12px; color: #be123c; }
+.template-builder-editor__count.is-over-limit { color: #be123c; font-weight: 700; }
+:is(.wa-message-editor, .template-builder-phone__body) :is(ul, ol) { margin: 0; padding-left: 24px; }
+:is(.wa-message-editor, .template-builder-phone__body) li { padding-left: 2px; }
+:is(.wa-message-editor, .template-builder-phone__body) code { background: #edf1eb; border-radius: 3px; padding: 1px 3px; font-family: ui-monospace, Consolas, monospace; font-size: .95em; }
+@media (max-width: 600px) {
+    .wa-message-editor { font-size: 16px; padding: 14px; }
+    .wa-emoji-picker { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .wa-builder .wa-visual-editor .template-builder-editor__toolbar button { min-width: 36px; min-height: 36px; }
+}
 .wa-builder .template-builder-editor__toolbar { background: #f8faf8; }
 .wa-builder .template-builder-editor__toolbar button:hover { background: var(--brand-soft); color: var(--brand-dark); }
 .wa-builder .template-builder-button-card, .wa-builder .wa-upload { border-radius: 10px; border-color: #dce3dc; background: #f8faf8; }

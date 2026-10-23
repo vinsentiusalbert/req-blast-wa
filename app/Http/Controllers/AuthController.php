@@ -24,14 +24,14 @@ class AuthController extends Controller
 
         if (RateLimiter::tooManyAttempts($key, 5)) {
             throw ValidationException::withMessages([
-                'username' => 'Terlalu banyak percobaan. Coba lagi dalam '.RateLimiter::availableIn($key).' detik.',
+                'username' => 'Too many attempts. Try again in '.RateLimiter::availableIn($key).' seconds.',
             ]);
         }
 
         if (! Auth::attempt($credentials, $request->boolean('remember'))) {
             RateLimiter::hit($key, 60);
 
-            throw ValidationException::withMessages(['username' => 'Username atau kata sandi tidak sesuai.']);
+            throw ValidationException::withMessages(['username' => 'The username or password is incorrect.']);
         }
 
         RateLimiter::clear($key);

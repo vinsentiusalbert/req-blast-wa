@@ -1,70 +1,73 @@
-# Ruang Pesan — Laravel Admin & User
+# Message Space — Laravel Admin & User Portal
 
-Aplikasi Laravel 12 dengan autentikasi session dan dua role: `admin` dan `user`.
+An English-language Laravel 12 portal for WhatsApp template submissions, broadcast approvals, delivery reports, and user balances. The responsive interface uses a white background, charcoal text, and soft green accents, with keyboard-accessible navigation.
 
-## Fitur
+## Accounts and access
 
-- Login menggunakan username, ingat saya, dan logout. Pembuatan akun hanya melalui admin.
-- Username unik (3–50 karakter), tidak membedakan huruf besar/kecil; email tetap menjadi informasi akun.
-- Pendaftaran publik dinonaktifkan. Admin membuat akun melalui **Pengguna → Tambah pengguna**; akun baru memiliki role `user` dan admin tetap login pada akunnya sendiri.
-- Dashboard terpisah sesuai role; akses tanpa izin menghasilkan HTTP 403.
-- Admin dapat mencari pengguna, melihat daftar dengan pagination, dan mengubah role pengguna lain.
-- Role akun sendiri tidak dapat diubah dari halaman admin.
-- Password di-hash, proteksi CSRF, regenerasi session saat login, dan pembatasan percobaan login.
-- Tampilan Blade responsif berbahasa Indonesia. CSS lokal, tidak membutuhkan build npm.
-- Menu Broadcast WhatsApp untuk user: buat/edit template dengan preview, kemudian buat/edit broadcast Pending.
+- Sign in with a unique username; email remains an account contact field.
+- Public registration is disabled. Administrators create accounts through **Users → Add user**.
+- New accounts have the `user` role. Administrators can change other accounts' roles, but cannot change their own role.
+- User dashboards and resources are scoped to their owners. Administrators review templates and broadcasts across users.
+- Passwords are hashed. Authentication includes CSRF protection, session regeneration, remember-me support, and login rate limiting.
+- Application and fallback locales are English. New templates default to English; existing template language metadata is preserved.
 
-## Tampilan Ruang Pesan
+## Wallets and rates
 
-Identitas Ruang Pesan memakai dasar putih, teks charcoal, dan aksen hijau lembut. Sistem visual bersama ada di `public/css/white-theme.css`, dimuat setelah stylesheet komponen agar login, registrasi, dashboard, template, broadcast, persetujuan, dan laporan konsisten. Logo dan favicon ada di `public/assets/ruang-pesan.svg`. Navigasi mendukung desktop dan menu mobile dengan akses keyboard.
+Each account starts with **IDR 0** and a default rate of **IDR 500 per number**. Administrators open **Users → Manage balance** to add funds, set a custom rate, and inspect transactions. A rate of IDR 0 means free. Users see their own balance, rate, and history under **Balance & Transactions**.
 
-Login tetap menggunakan username dan autentikasi Laravel lokal. Menu menyesuaikan role admin/user dan fitur yang tersedia. Font Plus Jakarta Sans dan Space Grotesk dimuat dari Bunny Fonts, dengan fallback Arial jika tidak tersedia.
+Broadcast cost equals valid recipient count multiplied by the user's rate. The rate is locked on submission or resubmission. Later rate changes do not change existing submissions. The CSV form displays an estimate.
 
-## Broadcast WhatsApp
+Pending and rejected submissions are not charged. Approval deducts the cost once, in the same database transaction as the status update and recipient creation. Insufficient funds block approval. Finished does not charge again. Charges are based on approved recipients, rather than individual sent/failed outcomes. Broadcasts approved or finished before the wallet feature are not billed retroactively.
 
-Menu **Template WhatsApp** dan **Broadcast WhatsApp** terpisah pada sidebar user. Admin meninjau pengajuan di menu **Persetujuan Template**. Komponen builder dan pratinjau pesan menggunakan `public/css/whatsapp.css` dengan sistem visual bersama Ruang Pesan.
+Credits use unique references to prevent duplicate credits from repeated form submissions. Balance changes lock the account row, and each broadcast has at most one charge transaction. Money is stored as integer IDR. Maximum balance: IDR 1,000,000,000,000. Maximum rate: IDR 1,000,000,000 per number.
 
-1. User membuat template: nama unik per user, bahasa, display name opsional (kosong secara default), header teks/gambar, pesan, footer, dan tombol.
-2. Ajukan template. Status awal adalah **Menunggu persetujuan**. Admin melihat preview, menyetujui, atau menolak dengan alasan.
-3. User membuka menu **Broadcast WhatsApp**, memilih template miliknya yang **Disetujui**, lalu mengisi nama broadcast dan mengunggah CSV penerima. Kolom pertama wajib `msisdn`, diikuti kolom variabel sesuai template. Nomor wajib diawali `62` dan hanya berisi angka. Duplikat ditolak, tanpa batas jumlah penerima.
-4. Simpan broadcast: status awal `pending`. Admin membuka **Approval Broadcast**, memeriksa detail, lalu **Approve** (`approve`) dan **Finish** (`finish`). Admin juga dapat menolak broadcast Pending melalui **Reject** dengan alasan wajib (maksimal 2.000 karakter). User melihat alasan pada daftar, detail, dan halaman edit. User dapat mengedit saat Pending atau Reject; menyimpan perbaikan mengajukan ulang sebagai Pending dan menghapus alasan penolakan sebelumnya. Broadcast Approve/Finish tetap terkunci.
+## Templates and the visual editor
 
-Persetujuan template dilakukan oleh admin aplikasi. Pengiriman pesan dan koneksi ke provider WhatsApp belum tersedia. Persetujuan admin aplikasi berbeda dari persetujuan provider. Setiap edit template menaikkan revisi, menghapus persetujuan sebelumnya, dan mengajukan ulang. Approval broadcast Pending yang memakai template tersebut terblokir sampai admin menyetujui revisi baru. Keputusan admin memeriksa revisi dan status dalam transaksi, sehingga form peninjauan yang sudah kedaluwarsa tidak dapat menyetujui konten baru. Batas 550 karakter pesan dan 10 tombol adalah batas aplikasi yang mengikuti builder referensi; validasi provider perlu disesuaikan ketika integrasi ditambahkan.
+Create a template with a name, language, optional text/image header, and message body. Names start with a lowercase letter and contain lowercase letters, numbers, or underscores. Header images support JPG, PNG, and WebP under 1 MB. Images are stored privately and served through ownership-checked routes; `storage:link` is not required.
 
-Gambar header mendukung JPG/PNG/WebP hingga 5 MB, disimpan di disk `local` (privat), dan disajikan lewat route yang memeriksa pemilik. Tidak memerlukan `storage:link`. Untuk instalasi dari versi sebelumnya, jalankan `php artisan migrate`.
+Text headers are saved as `*Header text*` for WhatsApp bold formatting. The editor accepts plain text, the preview displays it in bold, and resaving an already formatted header does not add duplicate markers. Header variables are personalized inside the markers, for example `*Hello {{name}}*` becomes `*Hello Alex*`. The 60-character header limit applies to the content, excluding the two formatting markers.
 
-| Bagian | Lokasi dan tanggung jawab |
-| --- | --- |
-| Model | `app/Models/WhatsappTemplate.php`, `WhatsappBroadcast.php`: atribut, cast, dan relasi milik user |
-| Controller | `app/Http/Controllers/User/WhatsApp`: halaman user; `app/Http/Controllers/Admin/WhatsApp`: antrean dan keputusan persetujuan |
-| Form Request | `app/Http/Requests/WhatsApp`: validasi input, file, tombol, dan template milik user |
-| Policy | `app/Policies/Whatsapp*Policy.php`: akses pemilik; admin dapat membaca template/gambar untuk peninjauan |
-| Action | `app/Actions/WhatsApp`: simpan/ajukan ulang template, tinjau revisi oleh admin, dan simpan draft dengan pemeriksaan persetujuan |
-| Service / Rule | `app/Services/WhatsApp/RecipientParser.php`, `app/Rules/RecipientList.php`: normalisasi, deduplikasi, dan validasi penerima |
-| View | `resources/views/user/whatsapp`: halaman template/broadcast dan partial preview/navigasi |
-| Asset | `public/css/whatsapp.css`, `public/js/whatsapp-*.js`: styling, editor, tombol dinamis, preview aman memakai `textContent` |
+The visual editor supports bold, italic, strikethrough, monospace, lists, emoji, and CSV variables. Bodies are stored as plain text with WhatsApp formatting markers, rather than HTML. The 550-character limit includes markers and counts Unicode characters. Template, administrator, and broadcast previews share a formatter with allowlisted tags and escaped text. See the [WhatsApp formatting guide](https://faq.whatsapp.com/539178204879377/).
 
-Rute user: `/user/whatsapp/templates` dan `/user/whatsapp/broadcasts`, masing-masing memiliki index, create, store, show, edit, dan update. Semua rute berada di middleware `auth` dan `role:user`. Rute admin: `/admin/whatsapp/templates`, detail template, dan `PATCH /admin/whatsapp/templates/{template}/review`, dengan middleware `auth` dan `role:admin`. Tidak ada endpoint pengiriman atau penghapusan. Ikon WhatsApp menggunakan Font Awesome 6.7.2; CSS, font Brands, dan lisensinya berada di `public/vendor/fontawesome`.
+Submit templates for administrator approval. Rejection requires a reason. Every edit creates a new revision, clears approval, and resubmits the template. Broadcast approval remains blocked until the current template revision is approved. Reviews reject stale statuses and revisions. Legacy sender-name, footer, and button fields are not used by the current form.
 
-## Menjalankan proyek
+## Broadcasts, CSV, and scheduling
 
-Persyaratan: PHP 8.2+, Composer, dan ekstensi PDO SQLite.
+Choose an approved template and upload comma-separated UTF-8 CSV. The first column must be `msisdn`; subsequent column names are case-sensitive template variables:
 
-Untuk workspace ini, dependensi, `.env`, database SQLite, dan akun demo sudah disiapkan. Jalankan:
-
-```sh
-php artisan serve
+```csv
+msisdn,name,product
+6281234567890,Alex,Shoes
+6281234567891,Sam,Bag
 ```
 
-Buka http://127.0.0.1:8000.
+For example, `Hello {{name}}, your {{product}} order is ready.` previews as `Hello Alex, your Shoes order is ready.` Variables work in the body and text header. Every variable needs a column and a nonempty value in every record. Numbers currently must start with `62`, contain digits only, and have 8–15 digits. Duplicate CSV numbers are rejected. The application does not impose a recipient-count limit.
 
-Untuk pemasangan ulang dari salinan source:
+Previews use the first record. Uploading a replacement CSV replaces all recipients; leaving it empty when editing preserves saved records. Select the file again after form validation fails. The downloadable example is `public/downloads/sample-broadcast.csv`.
+
+Schedules use **UTC+7**. Both date/time fields may be empty; past schedules are rejected. Scheduling and report date boundaries use `Asia/Jakarta`, while stored timestamps use UTC. Money is displayed in IDR with English separators.
+
+Broadcasts move through Pending → Approved → Finished, or are Rejected with a reason. Users can edit Pending and Rejected broadcasts. Resubmission clears the rejection reason, returns to Pending, and quotes the latest rate. Approved and Finished broadcasts are locked. Approval stores recipient numbers and variables in batches.
+
+The Laravel application manages submissions, approvals, and sender settings. The companion Python worker in `../wa_blast_package` sends approved campaigns through the configured gateway. Administrator approval is distinct from provider approval. Finished is an administrative processing marker; individual delivery reports use stored recipient delivery data.
+
+Administrators open **WhatsApp Senders** to add multiple gateway URL, API key, and sender pairs, mark them **Active** or **Non-Active**, and configure per-sender minimum/maximum delay in seconds. A random delay within the inclusive range starts after each completed attempt. Equal bounds give a fixed delay. The worker chooses randomly among Active senders whose cooldown and daily quota allow a new send; Non-Active senders have no environment fallback. An attempt already reserved may finish after deactivation.
+
+Sender API keys are encrypted with Laravel's `APP_KEY`, hidden from serialization, and never redisplayed. The worker must use the same MySQL/MariaDB database, with `LARAVEL_APP_KEY` matching Laravel's `APP_KEY` and `LARAVEL_CIPHER` matching its cipher. Install the updated Python requirements before using the worker. Sender ranges, quotas, and failure controls are managed only by administrators; existing cooldowns and counters are preserved when settings change. Quotas count attempts across campaigns and reset by Asia/Jakarta calendar day. Failure cooldowns apply after failed/unknown attempts; repeated failures automatically make a sender Non-Active for review. These controls do not guarantee protection against account restrictions.
+
+## Reports
+
+Users see their own reports. Administrators can filter across users. Reports include delivery summaries and date/status/number filters, with English CSV and Excel exports. Downloads use the active filters. CSV exports protect against spreadsheet formula injection; Excel preserves phone numbers and values as text. Failure details appear only for failed recipients.
+
+## Setup
+
+Requirements: PHP 8.2+, Composer, and PDO SQLite. Excel exports require PHP ZIP and XMLWriter. CSS and JavaScript are served directly, so an npm build is not required. Plus Jakarta Sans and Space Grotesk load from Bunny Fonts, with fallback fonts. Font Awesome assets and licensing are in `public/vendor/fontawesome`.
 
 ```sh
 composer install
 ```
 
-Salin `.env.example` menjadi `.env`, buat file kosong `database/database.sqlite` jika belum ada, lalu:
+Copy `.env.example` to `.env` and create an empty `database/database.sqlite` file if needed. Then run:
 
 ```sh
 php artisan key:generate
@@ -72,70 +75,48 @@ php artisan migrate --seed
 php artisan serve
 ```
 
-## Akun demo lokal
+Open http://127.0.0.1:8000. Existing installations should run `php artisan migrate`. Migrations preserve credentials and roles, generate unique usernames for older accounts, and initialize balances/rates without charging historical broadcasts. Use `APP_LOCALE=en`, `APP_FALLBACK_LOCALE=en`, and `APP_FAKER_LOCALE=en_US`.
 
-| Role | Username | Kata sandi |
+### Local demo accounts
+
+| Role | Username | Password |
 | --- | --- | --- |
 | Admin | admin | Admin123! |
 | User | user | User12345! |
 
-Untuk database lama, jalankan `php artisan migrate`. Username dibuat dari bagian email sebelum `@`, dinormalisasi menjadi huruf kecil; benturan diberi akhiran angka. Password dan role lama dipertahankan. Username dapat dilihat pada daftar pengguna oleh admin.
+The seeder creates demo accounts only in `local` and `testing`, without overwriting existing accounts. Demo credentials are for development, not production.
 
-Seeder hanya membuat akun demo pada environment `local` / `testing` dan tidak menimpa akun yang sudah ada. Akun demo ditujukan untuk pengembangan; jangan gunakan database demo sebagai database produksi.
+## Routes
 
-## Rute
-
-| Rute | Akses |
+| Route | Access |
 | --- | --- |
-| `/login` | Tamu |
-| `/dashboard` | Pengguna login, diarahkan sesuai role |
-| `/admin/dashboard` | Admin |
-| `/admin/users` | Admin |
-| `GET /admin/users/create`, `POST /admin/users` | Admin, membuat akun pengguna |
-| `PATCH /admin/users/{user}/role` | Admin, untuk akun lain |
-| `/user/dashboard` | User |
-| `POST /logout` | Pengguna login |
+| `/login` | Guests |
+| `/dashboard` | Signed-in accounts, redirected by role |
+| `/admin/dashboard`, `/admin/users` | Administrators |
+| `GET /admin/users/create`, `POST /admin/users` | Administrators, create users |
+| `GET /admin/users/{user}/wallet` | Administrators, user balance/history |
+| `POST /admin/users/{user}/wallet/credit` | Administrators, add funds |
+| `PATCH /admin/users/{user}/wallet/rate` | Administrators, set rate |
+| `PATCH /admin/users/{user}/role` | Administrators, other accounts only |
+| `/user/dashboard`, `/user/wallet` | Users, own account |
+| `/user/whatsapp/templates`, `/user/whatsapp/broadcasts` | Users, own resources |
+| `/admin/whatsapp/templates`, `/admin/whatsapp/broadcasts` | Administrators, reviews |
+| `/user/whatsapp/reports`, `/admin/whatsapp/reports` | Respective role, scoped reports |
+| `POST /logout` | Signed-in accounts |
 
-## Struktur utama
+Template and broadcast resources provide index, create, store, show, edit, and update routes. Reviews use PATCH. There are no public registration, sending, or deletion endpoints.
 
-- `app/Models/User.php`: konstanta dan pemeriksaan role; role tidak mass assignable.
-- `app/Http/Middleware/EnsureUserHasRole.php`: pembatasan akses role di server.
-- `app/Http/Controllers/AuthController.php`: login dan logout.
-- `app/Http/Controllers/Admin/UserController.php`: pembuatan akun, daftar, pencarian, perubahan role.
-- `bootstrap/app.php`: pendaftaran middleware `role`.
-- `routes/web.php`: rute dan pembatasan akses.
-- `resources/views`: halaman Blade.
-- `public/css/app.css`: stylesheet yang langsung dapat digunakan.
+## Implementation and tests
 
-## Pengujian
+Models live in `app/Models`, validation in `app/Http/Requests/WhatsApp`, ownership policies in `app/Policies`, and transactional submission/review/charging actions in `app/Actions/WhatsApp`. CSV and export services are in `app/Services/WhatsApp`. Role middleware is registered in `bootstrap/app.php` and applied in `routes/web.php`.
 
-### Broadcast dengan CSV dan variabel
-
-Pada halaman broadcast, unggah CSV UTF-8 dengan pemisah koma (tanpa batas jumlah penerima di aplikasi). Kolom pertama wajib `msisdn`; nama kolom selanjutnya bebas dan peka huruf besar/kecil:
-
-```csv
-msisdn,nama,produk
-6281234567890,Budi,Sepatu
-6281234567891,Siti,Tas
-```
-
-Template `Halo {{nama}}, produk {{produk}} tersedia.` ditampilkan pada preview sebagai `Halo Budi, produk Sepatu tersedia.` Variabel didukung pada isi pesan dan header teks. Semua variabel template wajib memiliki kolom dan nilai pada setiap record. Nomor wajib diawali `62` dan hanya berisi angka; nomor duplikat ditolak agar data personalisasi tidak ambigu. Preview upload dan halaman detail menggunakan record pertama. Data setiap record tersimpan bersama draft; saat edit, upload CSV baru mengganti seluruh penerima, sedangkan tanpa upload data lama dipertahankan. Setelah validasi form gagal, file perlu dipilih ulang.
-
-Jalankan `php artisan migrate` untuk menambahkan penyimpanan record CSV pada instalasi lama. Broadcast mengikuti status Pending ? Approve ? Finish yang diproses manual oleh admin. Waktu dan admin pemroses tersimpan. Migrasi juga mengubah draft lama menjadi Pending. Perubahan status ini tidak memanggil layanan pengiriman WhatsApp.
+Blade screens are in `resources/views`. The shared visual system is in `public/css/white-theme.css`, with component styles in `app.css`, `whatsapp.css`, and `reports.css`. The editor and previews use `public/js/whatsapp-*.js`. The logo/favicon is `public/assets/message-space.svg`.
 
 ```sh
 php artisan test
 php vendor/bin/pint --test
 ```
 
-Pengujian memakai SQLite `:memory:` sehingga tidak mengubah database aplikasi. Cakupan meliputi autentikasi, penutupan pendaftaran publik, pembuatan akun khusus admin beserta validasinya, rate limiting, pemisahan akses, penolakan eskalasi role, perubahan role, pencarian, pagination, dan seeder.
+Tests use SQLite `:memory:` and do not modify the application database. They cover authentication, account creation, authorization, revisions, CSV validation, personalization, reports, wallet credits, idempotency, insufficient funds, quoted rates, approval rollback, and historical broadcasts.
 
-Referensi: [autentikasi Laravel](https://laravel.com/docs/12.x/authentication), [middleware](https://laravel.com/docs/12.x/middleware).
-
-## Report WhatsApp
-
-Menu **Report WhatsApp** tersedia untuk user (broadcast sendiri) dan admin (seluruh user). Filter meliputi tanggal pembuatan broadcast, status broadcast, serta user khusus admin. Detail menampilkan status per penerima, jumlah percobaan, waktu pengiriman/gagal, dan alasan gagal. Pencarian nomor dan filter status juga berlaku pada unduhan CSV.
-
-Jalankan `php artisan migrate` untuk menambahkan kolom pelaporan penerima. Status pengiriman `pending`, `sent`, dan `failed` dibaca dari tabel penerima; status broadcast Finish tidak dianggap sebagai bukti terkirim. Fitur ini tidak mengirim pesan atau mengisi hasil pengiriman secara otomatis; integrasi pengiriman perlu mencatat hasil ke tabel penerima.
-
-Report mendukung unduhan Excel `.xlsx` dan CSV dari halaman detail, mengikuti filter aktif. Excel mempertahankan nomor sebagai teks, membekukan baris judul, dan menyediakan filter kolom. Informasi kegagalan lama disembunyikan pada penerima yang sudah terkirim; kartu Gagal hanya tampil bila ada penerima berstatus gagal. Ekspor Excel memerlukan ekstensi PHP zip dan xmlwriter.
+Open `tests/browser/whatsapp-editor.html` in a browser for dependency-free editor checks covering formatting, emoji, caret restoration, paste, safe previews, and character validation.

@@ -1,6 +1,6 @@
 (() => {
     'use strict';
-    // Use textContent for user-authored content; previews never inject HTML.
+    // Only the shared formatter may generate HTML; headers remain plain text.
     window.WhatsAppPreview = {
         render(data = {}) {
             const write = (selector, value) => {
@@ -8,8 +8,10 @@
                 if (node) node.textContent = value || '';
                 return node;
             };
-            write('[data-preview-body]', data.body || 'Isi pesan Anda akan tampil di sini.');
-            const header = write('[data-preview-header]', data.header_text);
+            const body = document.querySelector('[data-preview-body]');
+            if (body) body.innerHTML = window.WhatsAppText.toHtml(data.body || 'Your message will appear here.');
+            const headerText = (data.header_text || '').trim().replace(/^\*+|\*+$/g, '').trim();
+            const header = write('[data-preview-header]', headerText);
             if (header) header.hidden = data.header_type !== 'TEXT' || !data.header_text;
             const image = document.querySelector('[data-preview-image]');
             if (image) {
@@ -19,4 +21,7 @@
             }
         }
     };
+    document.querySelectorAll('[data-preview-body]').forEach(body => {
+        body.innerHTML = window.WhatsAppText.toHtml(body.textContent);
+    });
 })();

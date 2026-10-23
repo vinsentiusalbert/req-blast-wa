@@ -30,7 +30,7 @@ class WhatsAppBroadcastTest extends TestCase
         $broadcast = $user->whatsappBroadcasts()->sole();
         $this->assertSame('2026-10-22 18:15:00', $broadcast->scheduled_at->utc()->format('Y-m-d H:i:s'));
         $this->get(route('user.whatsapp.broadcasts.edit', $broadcast))->assertOk()->assertSee('2026-10-23')->assertSee('01:15');
-        $this->get(route('user.whatsapp.broadcasts.show', $broadcast))->assertOk()->assertSee('23 Oct 2026, 01:15 WIB');
+        $this->get(route('user.whatsapp.broadcasts.show', $broadcast))->assertOk()->assertSee('23 Oct 2026, 01:15 UTC+7');
         $this->put(route('user.whatsapp.broadcasts.update', $broadcast), $data + ['schedule_date' => '2026-10-22', 'schedule_time' => '11:00'])->assertSessionHasNoErrors();
         $this->assertSame('2026-10-22 04:00:00', $broadcast->fresh()->scheduled_at->utc()->format('Y-m-d H:i:s'));
         $this->put(route('user.whatsapp.broadcasts.update', $broadcast), $data + ['schedule_date' => '', 'schedule_time' => ''])->assertSessionHasNoErrors();
@@ -41,19 +41,19 @@ class WhatsAppBroadcastTest extends TestCase
     {
         $user = User::factory()->create();
         $template = $this->template($user);
-        $template->update(['header_type' => 'TEXT', 'header_text' => 'Hai {{nama}}', 'body' => 'Produk {{produk}} untuk {{nama}}']);
-        $csv = fn () => UploadedFile::fake()->createWithContent('penerima.csv', "\xEF\xBB\xBFmsisdn,nama,produk\n6281234567890,Budi,\"Sepatu, Merah\"\n6281234567891,Siti,Tas");
+        $template->update(['header_type' => 'TEXT', 'header_text' => 'Hi {{name}}', 'body' => 'Product {{product}} for {{name}}']);
+        $csv = fn () => UploadedFile::fake()->createWithContent('recipients.csv', "\xEF\xBB\xBFmsisdn,name,product\n6281234567890,Alex,\"Shoes, Red\"\n6281234567891,Sam,Bag");
         $this->actingAs($user)->postJson(route('user.whatsapp.broadcasts.preview-csv'), [
             'whatsapp_template_id' => $template->id, 'recipients_csv' => $csv(),
-        ])->assertOk()->assertJsonPath('first.nama', 'Budi')->assertJsonPath('count', 2);
+        ])->assertOk()->assertJsonPath('first.name', 'Alex')->assertJsonPath('count', 2);
         $this->post(route('user.whatsapp.broadcasts.store'), [
             'name' => 'CSV promo', 'whatsapp_template_id' => $template->id, 'recipients_csv' => $csv(),
         ])->assertSessionHasNoErrors();
         $broadcast = $user->whatsappBroadcasts()->sole();
-        $this->assertSame('Tas', $broadcast->recipient_records[1]['produk']);
+        $this->assertSame('Bag', $broadcast->recipient_records[1]['product']);
         $this->assertSame('6281234567890', $broadcast->recipients[0]);
         $this->get(route('user.whatsapp.broadcasts.show', $broadcast))->assertOk()
-            ->assertSee('Hai Budi')->assertSee('Produk Sepatu, Merah untuk Budi')->assertDontSee('Hai {{nama}}');
+            ->assertSee('Hi Alex')->assertSee('Product Shoes, Red for Alex')->assertDontSee('Hi {{name}}');
         $this->put(route('user.whatsapp.broadcasts.update', $broadcast), [
             'name' => 'Updated', 'whatsapp_template_id' => $template->id,
         ])->assertSessionHasNoErrors();
@@ -64,20 +64,20 @@ class WhatsAppBroadcastTest extends TestCase
     {
         $user = User::factory()->create();
         $template = $this->template($user);
-        $template->update(['body' => 'Hai {{nama}}']);
+        $template->update(['body' => 'Hi {{name}}']);
         $this->actingAs($user);
         foreach ([
-            "msisdn,nama\n081234567890,Budi",
-            "msisdn,nama\n+6281234567890,Budi",
-            "msisdn,nama\n14155552671,Budi",
-            "nama,msisdn\nBudi,6281234567890",
-            "msisdn,nama,nama\n6281234567890,Budi,Budi",
-            "msisdn,nama\n6281234567890,",
-            "msisdn,produk\n6281234567890,Tas",
-            "msisdn,nama\n6281234567890,Budi\n6281234567890,Siti",
-            "msisdn,nama\ninvalid,Budi",
-            "msisdn,nama\n6281234567890,Budi,Extra",
-            "msisdn,nama\n",
+            "msisdn,name\n081234567890,Alex",
+            "msisdn,name\n+6281234567890,Alex",
+            "msisdn,name\n14155552671,Alex",
+            "name,msisdn\nBudi,6281234567890",
+            "msisdn,name,name\n6281234567890,Alex,Alex",
+            "msisdn,name\n6281234567890,",
+            "msisdn,product\n6281234567890,Bag",
+            "msisdn,name\n6281234567890,Alex\n6281234567890,Sam",
+            "msisdn,name\ninvalid,Alex",
+            "msisdn,name\n6281234567890,Alex,Extra",
+            "msisdn,name\n",
         ] as $content) {
             $this->post(route('user.whatsapp.broadcasts.store'), [
                 'name' => 'Invalid', 'whatsapp_template_id' => $template->id,
@@ -103,7 +103,7 @@ class WhatsAppBroadcastTest extends TestCase
     {
         $template = $user->whatsappTemplates()->create([
             'name' => 'promo_toko', 'language' => 'id', 'display_name' => 'Toko',
-            'header_type' => 'NONE', 'body' => 'Pesan promosi', 'buttons' => [],
+            'header_type' => 'NONE', 'body' => 'Message promosi', 'buttons' => [],
         ]);
         $template->forceFill(['approval_status' => WhatsappTemplate::APPROVED])->save();
 
@@ -113,7 +113,7 @@ class WhatsAppBroadcastTest extends TestCase
     public function test_broadcast_requires_a_template_first(): void
     {
         $this->actingAs(User::factory()->create());
-        $this->get(route('user.whatsapp.broadcasts.index'))->assertOk()->assertSee('Belum ada template yang disetujui');
+        $this->get(route('user.whatsapp.broadcasts.index'))->assertOk()->assertSee('No approved templates yet');
         $this->get(route('user.whatsapp.broadcasts.create'))->assertRedirect(route('user.whatsapp.broadcasts.index'));
         $this->post(route('user.whatsapp.broadcasts.store'), ['name' => 'Promo', 'recipients' => '6281234567890'])
             ->assertSessionHasErrors('whatsapp_template_id');

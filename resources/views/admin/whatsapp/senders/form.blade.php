@@ -1,0 +1,24 @@
+@extends('layouts.app')
+@section('title', $sender->exists ? 'Edit WhatsApp Sender' : 'Add WhatsApp Sender')
+@section('content')
+<a class="back-link" href="{{ route('admin.whatsapp.senders.index') }}">&larr; Back to senders</a>
+<div class="page-heading"><div><span class="eyebrow">WHATSAPP SETTINGS</span><h1>{{ $sender->exists ? 'Edit sender' : 'Add sender' }}</h1><p class="muted">Only administrators can change sender accounts and sending limits.</p></div></div>
+<section class="card user-create-card">
+    <form class="login-form" method="POST" action="{{ $sender->exists ? route('admin.whatsapp.senders.update', $sender) : route('admin.whatsapp.senders.store') }}">
+        @csrf
+        @if($sender->exists) @method('PUT') @endif
+        <div class="field-group"><label class="field-label" for="name">Account name</label><input class="text-input" id="name" name="name" value="{{ old('name', $sender->name) }}" maxlength="100" required></div>
+        <div class="field-group"><label class="field-label" for="sender">Sender number</label><input class="text-input" id="sender" name="sender" value="{{ old('sender', $sender->sender) }}" inputmode="numeric" pattern="62[0-9]{6,13}" maxlength="15" placeholder="6281234567890" required><small class="field-hint">Use country code 62 and digits only. One account per sender number.</small></div>
+        <div class="field-group"><label class="field-label" for="api_base_url">Gateway base URL</label><input class="text-input" id="api_base_url" name="api_base_url" type="url" value="{{ old('api_base_url', $sender->api_base_url) }}" placeholder="https://gateway.example" maxlength="2048" required></div>
+        <div class="field-group"><label class="field-label" for="api_key">API key</label><input class="text-input" id="api_key" name="api_key" type="password" autocomplete="new-password" maxlength="4096" @required(!$sender->exists)><small class="field-hint">{{ $sender->exists ? 'Leave empty to keep the saved key. The saved key is never displayed.' : 'The key is encrypted before being saved.' }}</small></div>
+        <div class="field-group"><label class="field-label" for="status">Status</label><select class="text-input" id="status" name="status"><option value="active" @selected(old('status', $sender->status) === 'active')>Active</option><option value="inactive" @selected(old('status', $sender->status) === 'inactive')>Non-Active</option></select><small class="field-hint">Non-Active senders are excluded from new sends. A request already in progress may finish.</small></div>
+        <div class="field-group"><label class="field-label" for="min_delay_seconds">Minimum delay (seconds)</label><input class="text-input" id="min_delay_seconds" name="min_delay_seconds" type="number" min="1" max="86400" value="{{ old('min_delay_seconds', $sender->min_delay_seconds) }}" required></div>
+        <div class="field-group"><label class="field-label" for="max_delay_seconds">Maximum delay (seconds)</label><input class="text-input" id="max_delay_seconds" name="max_delay_seconds" type="number" min="1" max="86400" value="{{ old('max_delay_seconds', $sender->max_delay_seconds) }}" required><small class="field-hint">A random delay within this inclusive range starts after each send completes. Set equal values for a fixed delay. Changes apply after the next send; an existing cooldown is preserved.</small></div>
+        <div class="field-group"><label class="field-label" for="daily_limit">Daily attempt limit</label><input class="text-input" id="daily_limit" name="daily_limit" type="number" min="1" max="100000" value="{{ old('daily_limit', $sender->daily_limit) }}" required><small class="field-hint">Shared across campaigns and workers. Resets at midnight Asia/Jakarta. Failed and unknown attempts count.</small></div>
+        <div class="field-group"><label class="field-label" for="failure_cooldown_seconds">Failure cooldown (seconds)</label><input class="text-input" id="failure_cooldown_seconds" name="failure_cooldown_seconds" type="number" min="60" max="604800" value="{{ old('failure_cooldown_seconds', $sender->failure_cooldown_seconds) }}" required></div>
+        <div class="field-group"><label class="field-label" for="failure_threshold">Consecutive failures before Non-Active</label><input class="text-input" id="failure_threshold" name="failure_threshold" type="number" min="1" max="100" value="{{ old('failure_threshold', $sender->failure_threshold) }}" required><small class="field-hint">Review a paused sender before activating it again. Success resets the failure count.</small></div>
+        <p class="muted">Random delays and limits control traffic. They do not guarantee protection from account restrictions. Send only to recipients who have agreed to receive your messages.</p>
+        <button class="submit-btn" type="submit">Save sender</button>
+    </form>
+</section>
+@endsection

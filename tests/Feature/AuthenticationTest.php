@@ -13,8 +13,8 @@ class AuthenticationTest extends TestCase
 
     public function test_authentication_pages_are_available(): void
     {
-        $this->get('/login')->assertOk()->assertSee('Masuk akun Ruang Pesan')
-            ->assertSee('Hubungi admin')->assertDontSee('href="'.url('/register').'"', false);
+        $this->get('/login')->assertOk()->assertSee('Sign in to Message Space')
+            ->assertSee('Contact your administrator')->assertDontSee('href="'.url('/register').'"', false);
     }
 
     public function test_public_registration_is_unavailable(): void
@@ -40,7 +40,7 @@ class AuthenticationTest extends TestCase
     public function test_admin_creates_user_without_switching_accounts_or_assigning_role_from_input(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
-        $this->actingAs($admin)->get('/admin/users/create')->assertOk()->assertSee('Buat akun pengguna');
+        $this->actingAs($admin)->get('/admin/users/create')->assertOk()->assertSee('Create user account');
         $this->post('/admin/users', [
             'name' => 'New User',
             'username' => ' NEW.USER ',
@@ -105,7 +105,7 @@ class AuthenticationTest extends TestCase
 
         $this->post('/login', ['username' => $user->username, 'password' => 'Secure123!'])
             ->assertSessionHasErrors('username')
-            ->assertSessionHas('errors', fn ($errors) => str_contains($errors->first('username'), 'Terlalu banyak percobaan'));
+            ->assertSessionHas('errors', fn ($errors) => str_contains($errors->first('username'), 'Too many attempts'));
         $this->assertGuest();
     }
 

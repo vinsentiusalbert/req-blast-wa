@@ -13,12 +13,21 @@
     let sequence = 0;
     let pending = false;
     let invalid = false;
+    const billing = form.querySelector('[data-billing-estimate]');
+    let recipientCount = Number(billing?.dataset.count || 0);
+    const money = value => 'IDR ' + new Intl.NumberFormat('en-US').format(value);
     const render = () => {
         const data = {...(previews[select.value] || {})};
         const replace = text => (text || '').replace(/\{\{\s*([^{}]+?)\s*\}\}/gu, (match, key) => first && Object.hasOwn(first, key.trim()) ? first[key.trim()] : match);
         data.body = replace(data.body);
         data.header_text = replace(data.header_text);
         window.WhatsAppPreview.render(data);
+        if (billing) {
+            const total = recipientCount * Number(billing.dataset.rate);
+            billing.querySelector('[data-broadcast-cost]').textContent = recipientCount
+                ? `${recipientCount} numbers × ${money(Number(billing.dataset.rate))} = ${money(total)}.${total > Number(billing.dataset.balance) ? ' Insufficient balance. Contact your administrator before the broadcast is approved.' : ''}`
+                : 'Upload a CSV to calculate the cost.';
+        }
         button.disabled = pending || invalid || button.dataset.unavailable === 'true';
     };
     const update = async () => {
@@ -28,18 +37,20 @@
         pending = false;
         first = null;
         count.textContent = '';
+        recipientCount = 0;
         if (!file.files.length) {
             first = saved;
+            recipientCount = Number(billing?.dataset.count || 0);
             render();
             return;
         }
         if (!select.value) {
-            count.textContent = 'Pilih template untuk melihat preview CSV.';
+            count.textContent = 'Choose a template to preview the CSV.';
             render();
             return;
         }
         pending = true;
-        count.textContent = 'Memeriksa CSV...';
+        count.textContent = 'Checking CSV...';
         render();
         try {
             const data = new FormData();
@@ -48,10 +59,11 @@
             data.append('whatsapp_template_id', select.value);
             const response = await fetch(form.dataset.previewUrl, {method: 'POST', body: data, headers: {'Accept': 'application/json'}});
             const result = await response.json();
-            if (!response.ok) throw new Error(Object.values(result.errors || {}).flat().join(' ') || 'CSV tidak dapat diproses. Periksa template atau muat ulang halaman.');
+            if (!response.ok) throw new Error(Object.values(result.errors || {}).flat().join(' ') || 'The CSV could not be processed. Check the template or reload the page.');
             if (current !== sequence) return;
             first = result.first;
-            count.textContent = `${result.count} penerima valid. Preview record pertama: +${first.msisdn}.`;
+            recipientCount = result.count;
+            count.textContent = `${result.count} valid recipients. First record preview: +${first.msisdn}.`;
         } catch (e) {
             if (current !== sequence) return;
             invalid = true;
@@ -67,8 +79,8 @@
     form.addEventListener('submit', event => {
         if (pending || invalid) { event.preventDefault(); return; }
         button.disabled = true;
-        button.textContent = 'Menyimpan broadcast...';
+        button.textContent = 'Saving broadcast...';
     });
-    window.addEventListener('pageshow', () => { button.textContent = 'Simpan Broadcast'; update(); });
+    window.addEventListener('pageshow', () => { button.textContent = 'Save Broadcast'; update(); });
     render();
 })();

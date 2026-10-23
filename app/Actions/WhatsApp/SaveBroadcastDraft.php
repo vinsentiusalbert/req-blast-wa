@@ -21,18 +21,18 @@ class SaveBroadcastDraft
             ? $csv->parse($data['recipients_csv']->getRealPath())
             : (isset($data['recipients']) ? array_map(fn ($number) => ['msisdn' => $number], $this->recipients->parse($data['recipients'])) : ($broadcast?->recipient_records ?? array_map(fn ($number) => ['msisdn' => $number], $broadcast?->recipients ?? [])));
         if (! $records) {
-            throw ValidationException::withMessages(['recipients_csv' => 'Unggah CSV penerima terlebih dahulu.']);
+            throw ValidationException::withMessages(['recipients_csv' => 'Upload the recipient CSV first.']);
         }
         $recipients = array_column($records, 'msisdn');
 
         return DB::transaction(function () use ($user, $data, $broadcast, $recipients, $records, $csv) {
             $template = $user->whatsappTemplates()->lockForUpdate()->findOrFail($data['whatsapp_template_id']);
             if (! $template->isApproved()) {
-                throw ValidationException::withMessages(['whatsapp_template_id' => 'Template belum disetujui admin atau sedang diajukan ulang.']);
+                throw ValidationException::withMessages(['whatsapp_template_id' => 'The template is awaiting administrator approval or has been resubmitted.']);
             }
             $draft = $broadcast ? $user->whatsappBroadcasts()->lockForUpdate()->findOrFail($broadcast->id) : $user->whatsappBroadcasts()->make();
             if ($draft->exists && ! in_array($draft->status, [WhatsappBroadcast::STATUS_PENDING, WhatsappBroadcast::STATUS_REJECT], true)) {
-                throw ValidationException::withMessages(['name' => 'Broadcast yang sudah Approve atau Finish tidak dapat diubah.']);
+                throw ValidationException::withMessages(['name' => 'Approved or finished broadcasts cannot be edited.']);
             }
             $draft->status = WhatsappBroadcast::STATUS_PENDING;
             $draft->rejection_reason = null;
@@ -40,6 +40,9 @@ class SaveBroadcastDraft
             $draft->rejected_by = null;
             $draft->revision = $draft->exists ? $draft->revision + 1 : 1;
             $csv->validateVariables($template, $records);
+            $draft->unit_price = User::findOrFail($user->id)->broadcast_rate;
+            $draft->recipient_count = count($recipients);
+            $draft->estimatedCost();
             $draft->fill([
                 'name' => $data['name'],
                 'whatsapp_template_id' => $template->id,

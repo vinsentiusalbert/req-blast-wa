@@ -39,7 +39,7 @@ class BroadcastController extends Controller
     public function create(Request $request): View|RedirectResponse
     {
         if (! $request->user()->whatsappTemplates()->approved()->exists()) {
-            return to_route('user.whatsapp.broadcasts.index')->with('status', 'Belum ada template yang disetujui admin. Broadcast dapat dibuat setelah template Anda disetujui.');
+            return to_route('user.whatsapp.broadcasts.index')->with('status', 'No approved templates are available. You can create a broadcast after your template is approved.');
         }
 
         $data = $request->validate(['template' => ['nullable', 'integer']]);
@@ -54,7 +54,7 @@ class BroadcastController extends Controller
     {
         $broadcast = $action->handle($request->user(), $request->validated());
 
-        return to_route('user.whatsapp.broadcasts.show', $broadcast)->with('status', 'Broadcast berhasil disimpan dengan status Pending dan masuk ke daftar approval admin.');
+        return to_route('user.whatsapp.broadcasts.show', $broadcast)->with('status', 'The broadcast was saved as Pending and submitted for administrator review.');
     }
 
     public function show(WhatsappBroadcast $broadcast): View
@@ -82,7 +82,7 @@ class BroadcastController extends Controller
     {
         $action->handle($request->user(), $request->validated(), $broadcast);
 
-        return to_route('user.whatsapp.broadcasts.show', $broadcast)->with('status', 'Broadcast berhasil diperbarui dan diajukan dengan status Pending.');
+        return to_route('user.whatsapp.broadcasts.show', $broadcast)->with('status', 'The broadcast was updated and resubmitted as Pending.');
     }
 
     private function form(Request $request, WhatsappBroadcast $broadcast): View

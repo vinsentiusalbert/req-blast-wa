@@ -11,7 +11,7 @@
         </a>
         <a class="portal-subnav__item {{ request()->routeIs('user.whatsapp.broadcasts.*') ? 'portal-subnav__item--active' : '' }}" href="{{ route('user.whatsapp.broadcasts.index') }}" @if(request()->routeIs('user.whatsapp.broadcasts.*')) aria-current="page" @endif>
             <span class="portal-subnav__icon" aria-hidden="true">@include('partials.portal-sidebar-icon', ['icon' => 'broadcast', 'subnav' => true])</span>
-            <span>Broadcast WhatsApp</span>
+            <span>WhatsApp Broadcasts</span>
         </a>
     </div>
 </div>

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\User;
+use App\Services\WhatsApp\BroadcastCsv;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -12,12 +13,59 @@ class WhatsAppTemplateTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_text_headers_are_saved_with_a_single_pair_of_whatsapp_bold_markers(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->post(route('user.whatsapp.templates.store'), $this->payload([
+            'header_text' => 'Hello {{name}}',
+        ]))->assertSessionHasNoErrors();
+        $template = $user->whatsappTemplates()->sole();
+        $this->assertSame('*Hello {{name}}*', $template->header_text);
+        $this->get(route('user.whatsapp.templates.edit', $template))->assertOk()
+            ->assertSee('value="Hello {{name}}"', false)->assertDontSee('value="*Hello {{name}}*"', false);
+        $this->put(route('user.whatsapp.templates.update', $template), $this->payload([
+            'header_text' => '*Hello {{name}}*',
+        ]))->assertSessionHasNoErrors();
+        $this->assertSame('*Hello {{name}}*', $template->fresh()->header_text);
+        $this->assertSame('*Hello Alex*', (new BroadcastCsv)->render($template->header_text, ['name' => 'Alex']));
+    }
+
+    public function test_header_length_limit_counts_content_without_bold_markers(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->post(route('user.whatsapp.templates.store'), $this->payload([
+            'header_text' => '*'.str_repeat('a', 60).'*',
+        ]))->assertSessionHasNoErrors();
+        $this->assertSame('*'.str_repeat('a', 60).'*', $user->whatsappTemplates()->sole()->header_text);
+        foreach (['***', str_repeat('a', 61)] as $header) {
+            $this->post(route('user.whatsapp.templates.store'), $this->payload([
+                'name' => 'invalid_header', 'header_text' => $header,
+            ]))->assertSessionHasErrors('header_text');
+        }
+    }
+
+    public function test_visual_editor_preserves_whatsapp_formatting_emoji_and_variables(): void
+    {
+        $user = User::factory()->create();
+        $body = "Hello *{{name}}* 👋\n_Promo_ ~old~ ```CODE123```\n- Gift 🎁\n- Free shipping 🚀";
+        $this->actingAs($user)->post(route('user.whatsapp.templates.store'), $this->payload(['body' => $body]))
+            ->assertSessionHasNoErrors();
+        $template = $user->whatsappTemplates()->sole();
+        $this->assertSame($body, $template->body);
+        $response = $this->get(route('user.whatsapp.templates.edit', $template))
+            ->assertOk()->assertSee('data-message-editor', false)->assertSee('data-emoji-picker', false)->assertSee($body);
+        $html = $response->getContent();
+        $this->assertLessThan(strpos($html, 'js/whatsapp-editor.js'), strpos($html, 'js/whatsapp-text.js'));
+        $this->assertLessThan(strpos($html, 'js/whatsapp-template.js'), strpos($html, 'js/whatsapp-editor.js'));
+        $this->get(route('user.whatsapp.templates.show', $template))->assertOk()->assertSee('js/whatsapp-preview.js');
+    }
+
     private function payload(array $overrides = []): array
     {
         return array_replace([
-            'name' => 'promo_akhir_pekan', 'language' => 'id',
-            'header_type' => 'TEXT', 'header_text' => 'Promo spesial',
-            'body' => 'Halo! Nikmati promo akhir pekan kami.',
+            'name' => 'weekend_promo', 'language' => 'id',
+            'header_type' => 'TEXT', 'header_text' => 'Special offer',
+            'body' => 'Hello! Enjoy our weekend offer.',
         ], $overrides);
     }
 
@@ -31,17 +79,17 @@ class WhatsAppTemplateTest extends TestCase
         $template = $user->whatsappTemplates()->sole();
         $this->assertNull($template->footer);
         $this->assertSame('', $template->display_name);
-        $this->assertSame('promo_akhir_pekan', $template->name);
+        $this->assertSame('weekend_promo', $template->name);
         $this->assertSame([], $template->buttons);
         $this->assertSame($user->id, $template->user_id);
-        $this->get(route('user.whatsapp.templates.show', $template))->assertOk()->assertSee('Menunggu persetujuan');
-        $this->get(route('user.whatsapp.templates.edit', $template))->assertOk()->assertSee('promo_akhir_pekan');
-        $this->put(route('user.whatsapp.templates.update', $template), $this->payload(['body' => 'Pesan baru', 'display_name' => 'Sender lama', 'footer' => 'Footer lama']))
+        $this->get(route('user.whatsapp.templates.show', $template))->assertOk()->assertSee('Awaiting approval');
+        $this->get(route('user.whatsapp.templates.edit', $template))->assertOk()->assertSee('weekend_promo');
+        $this->put(route('user.whatsapp.templates.update', $template), $this->payload(['body' => 'New message', 'display_name' => 'Sender old', 'footer' => 'Footer old']))
             ->assertRedirect(route('user.whatsapp.templates.show', $template))->assertSessionHasNoErrors();
-        $this->assertSame('Pesan baru', $template->fresh()->body);
+        $this->assertSame('New message', $template->fresh()->body);
         $this->assertNull($template->fresh()->footer);
         $this->assertSame('', $template->fresh()->display_name);
-        $this->get(route('user.whatsapp.templates.index', ['search' => 'akhir', 'language' => 'id']))->assertOk()->assertSee($template->name);
+        $this->get(route('user.whatsapp.templates.index', ['search' => 'weekend', 'language' => 'id']))->assertOk()->assertSee($template->name);
         $this->get(route('user.whatsapp.templates.index', ['search' => 'missing']))->assertOk()->assertDontSee($template->name);
     }
 
