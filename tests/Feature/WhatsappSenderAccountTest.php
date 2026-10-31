@@ -40,14 +40,14 @@ class WhatsappSenderAccountTest extends TestCase
         $this->get(route('admin.whatsapp.senders.edit', $sender))->assertOk()->assertDontSee('fake-secret-never-render');
     }
 
-    public function test_accounts_store_encrypted_keys_and_are_hidden_from_serialization(): void
+    public function test_accounts_store_plain_keys_and_are_hidden_from_serialization(): void
     {
         $this->actingAs(User::factory()->create(['role' => 'admin']))
             ->post(route('admin.whatsapp.senders.store'), $this->payload())->assertSessionHasNoErrors()
             ->assertRedirect(route('admin.whatsapp.senders.index'));
         $sender = WhatsappSenderAccount::sole();
         $raw = DB::table('whatsapp_sender_accounts')->value('api_key');
-        $this->assertNotSame('fake-secret-never-render', $raw);
+        $this->assertSame('fake-secret-never-render', $raw);
         $this->assertSame('fake-secret-never-render', $sender->api_key);
         $this->assertArrayNotHasKey('api_key', $sender->toArray());
         $this->assertArrayNotHasKey('lease_token', $sender->toArray());
@@ -75,6 +75,18 @@ class WhatsappSenderAccountTest extends TestCase
         $this->assertSame('worker-token', $sender->lease_token);
         $this->put(route('admin.whatsapp.senders.update', $sender), $this->payload(['api_key' => 'replacement-secret']))->assertSessionHasNoErrors();
         $this->assertSame('replacement-secret', $sender->fresh()->api_key);
+        $this->assertSame('replacement-secret', $sender->fresh()->getRawOriginal('api_key'));
+    }
+
+    public function test_legacy_encrypted_keys_remain_readable_and_replacements_are_plain(): void
+    {
+        $sender = WhatsappSenderAccount::create($this->payload());
+        DB::table('whatsapp_sender_accounts')->where('id', $sender->id)->update([
+            'api_key' => \Illuminate\Support\Facades\Crypt::encryptString('legacy-key'),
+        ]);
+        $this->assertSame('legacy-key', $sender->fresh()->api_key);
+        $sender->update(['api_key' => 'new-key']);
+        $this->assertSame('new-key', $sender->fresh()->getRawOriginal('api_key'));
     }
 
     public function test_invalid_ranges_duplicates_and_statuses_are_rejected_without_flashing_key(): void

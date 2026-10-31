@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Contracts\Encryption\DecryptException;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Support\Facades\Crypt;
 
 class WhatsappSenderAccount extends Model
 {
@@ -14,10 +17,25 @@ class WhatsappSenderAccount extends Model
 
     protected $hidden = ['api_key', 'lease_token'];
 
+    protected function apiKey(): Attribute
+    {
+        return Attribute::make(get: function (?string $value): ?string {
+            if ($value === null) {
+                return null;
+            }
+
+            // Keep previously encrypted keys usable; new writes are stored as supplied.
+            try {
+                return Crypt::decryptString($value);
+            } catch (DecryptException) {
+                return $value;
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [
-            'api_key' => 'encrypted',
             'min_delay_seconds' => 'integer',
             'max_delay_seconds' => 'integer',
             'daily_limit' => 'integer',
