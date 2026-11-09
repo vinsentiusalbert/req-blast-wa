@@ -6,6 +6,9 @@
 <a class="report-back" href="{{ route($prefix.'.index') }}">&larr; All reports</a>
 <div class="page-heading report-heading"><div><span class="eyebrow">DELIVERY REPORT</span><h1>{{ $broadcast->name }}</h1><p class="muted">{{ $broadcast->user?->name }} &middot; {{ $broadcast->template?->name }} &middot; {{ $broadcast->created_at->timezone('Asia/Jakarta')->format('d M Y') }}</p></div><span class="badge campaign-status campaign-status--{{ $broadcast->status }}">{{ \App\Models\WhatsappBroadcast::STATUS_LABELS[$broadcast->status] ?? $broadcast->status }}</span></div>
 @include('reports.summary', ['target' => $broadcast->recipient_count])
+@if(auth()->user()->isAdmin())
+    @include('admin.whatsapp.broadcasts.files')
+@endif
 <section class="card table-card report-table">
 <div class="report-table-head"><div><h2>Recipient details</h2><p>{{ number_format($recipients->total()) }} recipients matching your filters &middot; Time in UTC+7</p></div><div class="report-actions"><a class="button report-excel" href="{{ route($prefix.'.export', ['broadcast' => $broadcast, 'format' => 'xlsx'] + $filters) }}">Download Excel <span aria-hidden="true">&darr;</span></a><a class="button secondary" href="{{ route($prefix.'.export', ['broadcast' => $broadcast] + $filters) }}">CSV</a></div></div>
 <form method="GET" class="report-filters" action="{{ route($prefix.'.show', $broadcast) }}">

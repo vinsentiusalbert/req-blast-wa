@@ -6,6 +6,7 @@
 <div class="template-builder-layout wa-builder">
     <div class="template-builder-main">
         @include('partials.broadcast-cost')
+        @include('admin.whatsapp.broadcasts.files')
         <article class="template-builder-card">
             <h2>Campaign details</h2>
             <dl><div><dt>Status</dt><dd>{{ \App\Models\WhatsappBroadcast::STATUS_LABELS[$broadcast->status] ?? $broadcast->status }}</dd></div>

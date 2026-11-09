@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\UserWalletController;
 use App\Http\Controllers\Admin\WhatsApp\BroadcastReviewController;
+use App\Http\Controllers\Admin\WhatsApp\CampaignFilesController;
 use App\Http\Controllers\Admin\WhatsApp\SenderAccountController;
 use App\Http\Controllers\Admin\WhatsApp\TemplateReviewController;
 use App\Http\Controllers\AuthController;
@@ -31,6 +32,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/whatsapp/reports', [WhatsAppReportController::class, 'index'])->name('whatsapp.reports.index');
         Route::get('/whatsapp/reports/{broadcast}', [WhatsAppReportController::class, 'show'])->name('whatsapp.reports.show');
         Route::get('/whatsapp/reports/{broadcast}/export', [WhatsAppReportController::class, 'export'])->name('whatsapp.reports.export');
+        Route::post('/whatsapp/reports/{broadcast}/upload', [CampaignFilesController::class, 'upload'])->name('whatsapp.reports.upload');
+        Route::get('/whatsapp/broadcasts/{broadcast}/download', [CampaignFilesController::class, 'download'])->name('whatsapp.broadcasts.download');
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
