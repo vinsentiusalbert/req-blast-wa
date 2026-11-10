@@ -20,11 +20,9 @@ class CampaignArchive
             fputcsv($messages, ['msisdn', 'message', 'header_text', 'footer'], ',', '"', '');
             fputcsv($report, ['msisdn', 'status', 'failure_reason'], ',', '"', '');
             $template = $broadcast->template;
-            $renderer = new BroadcastCsv;
             foreach ($broadcast->approvedRecipients()->lazyById(500) as $recipient) {
-                $variables = ['msisdn' => $recipient->msisdn] + ($recipient->variables ?? []);
-                fputcsv($messages, [$recipient->msisdn, $renderer->render($template->body, $variables),
-                    $template->header_type === 'TEXT' ? $renderer->render($template->header_text, $variables) : '',
+                fputcsv($messages, [$recipient->msisdn, $template->body,
+                    $template->header_type === 'TEXT' ? $template->header_text : '',
                     $template->footer ?? ''], ',', '"', '');
                 fwrite($numbers, $recipient->msisdn."\n");
                 fputcsv($report, [$recipient->msisdn, $recipient->status, $recipient->failure_reason ?? ''], ',', '"', '');

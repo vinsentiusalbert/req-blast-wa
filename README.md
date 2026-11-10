@@ -118,7 +118,7 @@ Template and broadcast resources provide index, create, store, show, edit, and u
 
 ## Implementation and tests
 
-Administrators can download an approved or finished campaign as `.tar.gz` from its detail or report page. The archive contains `messages.csv` (MSISDN, personalized body, text header, footer), `msisdn.txt`, `template.json` (template text and buttons), and `report-template.csv`. CSV message content preserves the original text, including line breaks. Header images remain available through the template's existing image download.
+Administrators can download an approved or finished campaign as `.tar.gz` from its detail or report page. The archive contains `messages.csv` (MSISDN, original body, text header, footer), `msisdn.txt`, `template.json` (template text and buttons), and `report-template.csv`. Exported messages keep variable placeholders such as `{{name}}` unchanged, without combining them with recipient data. CSV message content preserves the original text, including emoji and line breaks. Header images remain available through the template's existing image download.
 
 Upload a UTF-8 CSV of up to 10 MB on the specific campaign using columns `msisdn,status,failure_reason`. Supported statuses are `pending`, `sent`, and `failed`. Only recipients listed in the file are updated. Unknown numbers, duplicates, invalid statuses, or malformed rows reject the entire import. Uploads do not invent delivery timestamps or increment attempts. Re-uploading a report replaces the listed recipients' results; campaign completion remains the administrator's existing Finish action. No database migration is required.
 

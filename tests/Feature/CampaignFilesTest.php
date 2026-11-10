@@ -14,7 +14,7 @@ class CampaignFilesTest extends TestCase
     private function campaign()
     {
         $owner = User::factory()->create();
-        $template = $owner->whatsappTemplates()->create(['name' => 'promo', 'display_name' => '', 'language' => 'id', 'header_type' => 'TEXT', 'header_text' => 'Hi {{name}}', 'body' => "Hello {{name}},\nYour offer", 'footer' => 'Thank you']);
+        $template = $owner->whatsappTemplates()->create(['name' => 'promo', 'display_name' => '', 'language' => 'id', 'header_type' => 'TEXT', 'header_text' => 'Hi {{name}}', 'body' => "Hello {{name}},\nYour offer 😊 🎉 👩🏽‍💻", 'footer' => 'Thank you']);
         $campaign = $owner->whatsappBroadcasts()->create(['name' => 'Campaign', 'whatsapp_template_id' => $template->id, 'recipients' => ['6281234567890', '6281234567891'], 'recipient_count' => 2]);
         $campaign->forceFill(['status' => 'approve'])->save();
         foreach ($campaign->recipients as $number) {
@@ -31,7 +31,7 @@ class CampaignFilesTest extends TestCase
         ]);
     }
 
-    public function test_archive_contains_personalized_messages_numbers_and_import_template(): void
+    public function test_archive_preserves_original_messages_emoji_and_variable_placeholders(): void
     {
         $campaign = $this->campaign();
         $this->actingAs(User::factory()->create(['role' => 'admin']));
@@ -46,8 +46,16 @@ class CampaignFilesTest extends TestCase
             $this->assertStringContainsString("6281234567890\n6281234567891\n", gzdecode(file_get_contents($path)));
             $archive = new \PharData($download);
             $this->assertSame("6281234567890\n6281234567891\n", $archive['msisdn.txt']->getContent());
-            $this->assertStringContainsString("Hello Budi,\nYour offer", $archive['messages.csv']->getContent());
-            $this->assertStringContainsString('Hi Budi', $archive['messages.csv']->getContent());
+            $csv = fopen('php://memory', 'r+');
+            fwrite($csv, $archive['messages.csv']->getContent());
+            rewind($csv);
+            $this->assertSame(['msisdn', 'message', 'header_text', 'footer'], fgetcsv($csv, null, ',', '"', ''));
+            foreach ($campaign->recipients as $number) {
+                $this->assertSame([$number, $campaign->template->body, 'Hi {{name}}', 'Thank you'], fgetcsv($csv, null, ',', '"', ''));
+            }
+            $this->assertFalse(fgetcsv($csv, null, ',', '"', ''));
+            fclose($csv);
+            $this->assertStringNotContainsString('Budi', $archive['messages.csv']->getContent());
             $this->assertStringContainsString('msisdn,status,failure_reason', $archive['report-template.csv']->getContent());
             $this->assertSame('Thank you', json_decode($archive['template.json']->getContent(), true)['footer']);
             unset($archive);

@@ -1,7 +1,7 @@
 @if(in_array($broadcast->status, ['approve', 'finish']))
 <section class="template-builder-card" aria-label="Campaign files">
     <h2>Campaign files</h2>
-    <p>Download personalized messages, MSISDNs, and a reporting CSV template for this campaign.</p>
+    <p>Download original messages, MSISDNs, and a reporting CSV template for this campaign. Message variables are kept as placeholders.</p>
     <p><a class="button secondary" href="{{ route('admin.whatsapp.broadcasts.download', $broadcast) }}">Download messages &amp; MSISDN (.tar.gz)</a></p>
     <form method="POST" enctype="multipart/form-data" action="{{ route('admin.whatsapp.reports.upload', $broadcast) }}" class="login-form">
         @csrf
